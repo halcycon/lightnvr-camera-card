@@ -1,0 +1,38 @@
+{
+  "name": "lightnvr-camera-card",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=22.22.2 <23",
+    "npm": ">=10.9.7 <11"
+  },
+  "packageManager": "npm@10.9.7",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests scripts *.ts *.js",
+    "test:unit": "vitest run",
+    "test:probe": "node scripts/probe-connectivity.mjs",
+    "test:proxy": "playwright test tests/proxy",
+    "test:e2e": "playwright test tests/e2e",
+    "check:release": "node scripts/check-release.mjs"
+  },
+  "dependencies": {
+    "lit": "3.3.1",
+    "hls.js": "1.7.4",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "7.3.1",
+    "vitest": "3.2.4",
+    "@playwright/test": "1.56.1",
+    "@types/node": "22.19.0",
+    "eslint": "9.39.1",
+    "@eslint/js": "9.39.1",
+    "typescript-eslint": "8.46.3",
+    "globals": "16.5.0"
+  }
+}

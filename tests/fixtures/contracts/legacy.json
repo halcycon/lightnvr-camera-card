@@ -1,0 +1,1 @@
+{"type":"custom:webrtc-camera","server":"https://USER:P%40SS@nvr.example.test/go2rtc/","url":"front_door_sub","mode":"webrtc","media":"video,audio,microphone","ui":true}

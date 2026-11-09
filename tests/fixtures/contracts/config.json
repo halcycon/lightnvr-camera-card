@@ -1,0 +1,6 @@
+{
+  "type":"custom:lightnvr-camera-card", "server":"/lightnvr/front/", "username":"fixture_viewer", "password":"EXAMPLE_ONLY",
+  "stream":"front_door", "profile":"sub", "transports":["webrtc","mse","hls"],
+  "audio":{"listen":true,"muted":true,"microphone":true,"talk_mode":"ptt"},
+  "controls":{"speaker":true,"microphone":true,"fullscreen":true,"snapshot":true}
+}

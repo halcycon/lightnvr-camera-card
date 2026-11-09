@@ -1,0 +1,168 @@
+{
+  "research": "8983888a19fef2040c48eee0a4ce56db5dafeb85",
+  "tested": "4e578c1dac4a21688b420c8fc852f741d62efd2e",
+  "imageDigest": "sha256:3d28fc1a9ef395dfc5a7bf7e8013964f1c330ff10b6501240726dfc3f039c56b",
+  "browser": "156.0.8078.73",
+  "checks": [
+    {
+      "name": "directOriginCookieLogin",
+      "passed": true
+    },
+    {
+      "name": "directCredentialCorsRejected",
+      "passed": true
+    },
+    {
+      "name": "directBasicPreflightRejected",
+      "passed": true
+    },
+    {
+      "name": "sameOriginBasicFetch",
+      "passed": true
+    },
+    {
+      "name": "cookieLogin",
+      "passed": true
+    },
+    {
+      "name": "httpOnly",
+      "passed": true
+    },
+    {
+      "name": "inventory",
+      "passed": true
+    },
+    {
+      "name": "directWsRejected",
+      "passed": true
+    },
+    {
+      "name": "proxyWsOpened",
+      "passed": true
+    },
+    {
+      "name": "wsHandshakeStatuses",
+      "passed": true
+    },
+    {
+      "name": "sdpAnswer",
+      "passed": true
+    },
+    {
+      "name": "hlsScopedChild",
+      "passed": true
+    },
+    {
+      "name": "anonymousHlsChildDenied",
+      "passed": true
+    },
+    {
+      "name": "hlsInit",
+      "passed": true
+    },
+    {
+      "name": "hlsSegment",
+      "passed": true
+    },
+    {
+      "name": "nativePlaylist",
+      "passed": true
+    },
+    {
+      "name": "cookieScope",
+      "passed": true
+    },
+    {
+      "name": "cookieAbsentFromHa",
+      "passed": true
+    },
+    {
+      "name": "hostileOrigin",
+      "passed": true,
+      "status": 403
+    }
+  ],
+  "status": "passed",
+  "endpoints": [
+    {
+      "label": "proxy-basic-inventory",
+      "status": 200,
+      "contentType": "application/json"
+    },
+    {
+      "label": "proxy-login",
+      "status": 200,
+      "contentType": "application/json"
+    },
+    {
+      "label": "proxy-inventory",
+      "status": 200,
+      "contentType": "application/json"
+    },
+    {
+      "label": "proxy-sdp",
+      "status": 201,
+      "contentType": "application/sdp"
+    },
+    {
+      "label": "proxy-hls-master",
+      "status": 200,
+      "contentType": "application/vnd.apple.mpegurl"
+    },
+    {
+      "label": "proxy-hls-child",
+      "status": 200,
+      "contentType": "application/vnd.apple.mpegurl"
+    },
+    {
+      "label": "anonymous-hls-child",
+      "status": 401,
+      "contentType": "application/json"
+    },
+    {
+      "label": "proxy-hls-init",
+      "status": 200,
+      "contentType": "video/mp4"
+    },
+    {
+      "label": "proxy-hls-segment",
+      "status": 200,
+      "contentType": "video/iso.segment"
+    },
+    {
+      "label": "proxy-native-hls",
+      "status": 200,
+      "contentType": "application/vnd.apple.mpegurl"
+    }
+  ],
+  "preflights": [
+    {
+      "method": "OPTIONS",
+      "endpoint": "/api/auth/login",
+      "status": 404,
+      "contentType": "application/json"
+    },
+    {
+      "method": "OPTIONS",
+      "endpoint": "/api/streams",
+      "status": 404,
+      "contentType": "application/json"
+    }
+  ],
+  "wsHandshakes": [
+    {
+      "status": 403,
+      "contentType": null,
+      "via": "browser-console-status-only"
+    },
+    {
+      "status": 403,
+      "contentType": null
+    },
+    {
+      "status": 101,
+      "contentType": null
+    }
+  ],
+  "directBasicFetch": "blocked"
+}
