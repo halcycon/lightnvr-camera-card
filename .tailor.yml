@@ -1,0 +1,324 @@
+# Prepared against wimpysworld/tailor commit 0fefbd220c9fca15fc69f7018799ee690673e914.
+# Run tailor measure and tailor baste --verbose before applying.
+# Keep local agent/session settings outside Tailor's ownership.
+license: gpl-3.0
+
+# true creates or updates owned language fragments; false removes them.
+# Omission leaves them untouched.
+languages:
+  go: false
+  rust: false
+  python: false
+  shell: false
+  typescript: true
+
+# Model Context Protocol integrations are opt-in.
+# true creates or updates the owned Nix fragment and creates missing MCP
+# client starters. false removes the owned Nix fragment.
+# Omission leaves that integration's files untouched.
+mcp:
+  blender: false
+  playwright: false
+
+# Pages is opt-in. true manages owned Just and Nix fragments.
+# false removes them. Omission leaves the fragments untouched and leaves
+# Pages publishing unmanaged.
+# generator: static (default) creates a starter in an empty path.
+# Hugo and Jekyll need an existing site.
+# path: project-relative source directory, default pages.
+# branch: omit to use the current repository default branch.
+# cname: omit to preserve the domain, use "" to clear it, or set a domain.
+pages:
+  enabled: false
+
+repository:
+  description: "Home Assistant camera card for lightNVR with WebRTC, talk controls and MSE/HLS fallback"
+  homepage: ""
+  has_wiki: false
+  has_discussions: false
+  has_projects: false
+  has_issues: true
+  allow_merge_commit: false
+  allow_squash_merge: true
+  allow_rebase_merge: true
+  squash_merge_commit_title: PR_TITLE
+  squash_merge_commit_message: PR_BODY
+  delete_branch_on_merge: true
+  allow_update_branch: true
+  allow_auto_merge: true
+  web_commit_signoff_required: false
+  private_vulnerability_reporting_enabled: true
+  vulnerability_alerts_enabled: true
+  automated_security_fixes_enabled: true
+  default_workflow_permissions: read
+  can_approve_pull_request_reviews: false
+  secret_scanning: enabled
+  secret_scanning_push_protection: enabled
+  secret_scanning_non_provider_patterns: enabled
+
+immutable_releases:
+  enabled: false
+
+actions:
+  enabled: true
+  # Options: all, local_only, selected. SHA pinning applies separately.
+  # selected requires github_owned_allowed, verified_allowed,
+  # and patterns_allowed.
+  allowed_actions: all
+  sha_pinning_required: false
+  fork_pr_contributor_approval:
+    approval_policy: first_time_contributors
+
+code_scanning:
+  state: configured
+  query_suite: default
+  threat_model: remote
+  # An empty list means GitHub detects the languages. Valid values:
+  # actions, c-cpp, csharp, go, java-kotlin, javascript-typescript,
+  # python, ruby, swift
+  languages: []
+
+code_quality:
+  state: not-configured
+  # An empty list means GitHub detects the languages. Valid values:
+  # csharp, go, java-kotlin, javascript-typescript, python, ruby
+  languages: []
+
+ruleset:
+  # Tailor manages one ruleset named "Tailor" and owns it entirely.
+  # active enforces the rules. disabled retains the ruleset without enforcement.
+  # Other rulesets apply independently of this setting.
+  enforcement: active
+  bypass_actors:
+    # actor_type: RepositoryRole, Team, User, Integration, DeployKey
+    # RepositoryRole actor_id: 2 maintain, 4 write, 5 admin
+    # bypass_mode: always, pull_request, exempt
+    - actor_id: 5
+      actor_type: RepositoryRole
+      bypass_mode: always
+  conditions:
+    ref_name:
+      # Branch names or fnmatch patterns in refs/heads/<name> form.
+      # include also accepts ~DEFAULT_BRANCH and ~ALL.
+      include:
+        - ~DEFAULT_BRANCH
+      exclude: []
+  rules:
+    creation: false
+    update: false
+    deletion: true
+    required_linear_history: false
+    required_signatures: false
+    non_fast_forward: true
+    pull_request:
+      enabled: true
+      parameters:
+        required_approving_review_count: 1
+        dismiss_stale_reviews_on_push: true
+        require_code_owner_review: false
+        require_last_push_approval: false
+        required_review_thread_resolution: true
+        require_extra_approval_for_unattributed_changes: true
+        # Any combination of merge, squash, rebase. At least one.
+        allowed_merge_methods:
+          - squash
+          - rebase
+    required_status_checks:
+      enabled: false
+      parameters:
+        # When true, require branches to be up to date before merging.
+        strict_required_status_checks_policy: false
+        # When true, allow branch creation without status checks.
+        do_not_enforce_on_create: false
+        # context is the check name on a pull request,
+        # usually the GitHub Actions job name.
+        # Optional integration_id restricts the check to one app.
+        # 15368 is GitHub Actions.
+        required_status_checks: []
+    code_scanning:
+      # Enable only when the tool has results for both the pull request
+      # commit and the base branch.
+      enabled: false
+      parameters:
+        # tool is the tool name as GitHub shows it, for example CodeQL.
+        # alerts_threshold: none, errors, errors_and_warnings, all
+        # security_alerts_threshold: none, critical, high_or_higher,
+        # medium_or_higher, all
+        code_scanning_tools:
+          - tool: CodeQL
+            alerts_threshold: errors
+            security_alerts_threshold: high_or_higher
+
+labels:
+  - name: bug
+    color: d20f39
+    description: "Something isn't working"
+
+  - name: documentation
+    color: 04a5e5
+    description: "Documentation improvement"
+
+  - name: duplicate
+    color: 8839ef
+    description: "Already exists"
+
+  - name: enhancement
+    color: 1e66f5
+    description: "New feature request"
+
+  - name: good first issue
+    color: 40a02b
+    description: "Good for newcomers"
+
+  - name: help wanted
+    color: "179299"
+    description: "Extra attention needed"
+
+  - name: invalid
+    color: e64553
+    description: "Not valid or relevant"
+
+  - name: question
+    color: 7287fd
+    description: "Needs more information"
+
+  - name: wontfix
+    color: dc8a78
+    description: "Will not be worked on"
+
+  - name: dependencies
+    color: fe640b
+    description: "Dependency update"
+
+  - name: github_actions
+    color: ea76cb
+    description: "GitHub Actions update"
+
+  - name: hacktoberfest-accepted
+    color: df8e1d
+    description: "Hacktoberfest contribution"
+
+# Repository Actions variables are non-secret values.
+# Tailor creates or updates only declared variables and leaves others unchanged.
+# variables:
+#   - name: DEPLOY_REGION
+#     value: "eu-west-2"
+#   - name: RELEASE_SUFFIX
+#     value: ""
+
+swatches:
+  - path: .github/dependabot.yml
+    alteration: first-fit
+
+  - path: .github/FUNDING.yml
+    alteration: first-fit
+
+  - path: .github/ISSUE_TEMPLATE/bug_report.yml
+    alteration: first-fit
+
+  - path: .github/ISSUE_TEMPLATE/feature_request.yml
+    alteration: always
+
+  - path: .github/ISSUE_TEMPLATE/config.yml
+    alteration: first-fit
+
+  - path: .github/pull_request_template.md
+    alteration: never
+
+  - path: SECURITY.md
+    alteration: always
+
+  - path: CODE_OF_CONDUCT.md
+    alteration: always
+
+  - path: CONTRIBUTING.md
+    alteration: always
+
+  - path: SUPPORT.md
+    alteration: always
+
+  # Tailor creates a missing root for always or first-fit,
+  # but never rewrites an existing root.
+  # If an existing root lacks the loader import, add: import 'just/loader.just'
+  - path: justfile
+    alteration: first-fit
+
+  - path: .shellcheckrc
+    alteration: first-fit
+
+  - path: .editorconfig
+    alteration: first-fit
+
+  - path: .oxlintrc.json
+    alteration: first-fit
+
+  - path: .prettierrc.json
+    alteration: first-fit
+
+  - path: .prettierignore
+    alteration: first-fit
+
+  - path: ruff.toml
+    alteration: first-fit
+
+  - path: pyrightconfig.json
+    alteration: first-fit
+
+  - path: .golangci.yml
+    alteration: first-fit
+
+  - path: .goreleaser.yaml
+    alteration: first-fit
+
+  - path: Dockerfile
+    alteration: first-fit
+
+  - path: .github/workflows/build-go.yml
+    alteration: first-fit
+
+  # Tailor never rewrites an existing root.
+  # If its package list lacks the loader, add:
+  # ++ import ./nix/loader.nix { inherit pkgs; }
+  # Review and add new Nix files to Git because flakes exclude untracked files.
+  - path: flake.nix
+    alteration: first-fit
+
+  - path: .gitignore
+    alteration: first-fit
+
+  - path: .envrc
+    alteration: first-fit
+
+  - path: cubic.yaml
+    alteration: first-fit
+
+  - path: .github/workflows/tailor-pages.yml
+    alteration: always
+
+  - path: pages/index.html
+    alteration: first-fit
+
+  - path: pages/style.css
+    alteration: first-fit
+
+  - path: pages/theme.js
+    alteration: first-fit
+
+  - path: pages/icon.svg
+    alteration: first-fit
+
+  - path: wiki/Home.md
+    alteration: first-fit
+
+  - path: wiki/_Sidebar.md
+    alteration: first-fit
+
+  - path: wiki/_Footer.md
+    alteration: first-fit
+
+  - path: .github/workflows/tailor-wiki.yml
+    alteration: always
+
+  - path: .tailor.yml
+    alteration: always
+
