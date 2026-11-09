@@ -1,10 +1,6 @@
-# Prepared against wimpysworld/tailor commit 0fefbd220c9fca15fc69f7018799ee690673e914.
-# Run tailor measure and tailor baste --verbose before applying.
-# Keep local agent/session settings outside Tailor's ownership.
+# Refitted by tailor on 2026-11-09
 license: gpl-3.0
 
-# true creates or updates owned language fragments; false removes them.
-# Omission leaves them untouched.
 languages:
   go: false
   rust: false
@@ -13,26 +9,12 @@ languages:
   typescript: true
 
 # Model Context Protocol integrations are opt-in.
-# true creates or updates the owned Nix fragment and creates missing MCP
-# client starters. false removes the owned Nix fragment.
-# Omission leaves that integration's files untouched.
 mcp:
   blender: false
   playwright: false
 
-# Pages is opt-in. true manages owned Just and Nix fragments.
-# false removes them. Omission leaves the fragments untouched and leaves
-# Pages publishing unmanaged.
-# generator: static (default) creates a starter in an empty path.
-# Hugo and Jekyll need an existing site.
-# path: project-relative source directory, default pages.
-# branch: omit to use the current repository default branch.
-# cname: omit to preserve the domain, use "" to clear it, or set a domain.
-pages:
-  enabled: false
-
 repository:
-  description: "Home Assistant camera card for lightNVR with WebRTC, talk controls and MSE/HLS fallback"
+  description: Home Assistant camera card for lightNVR with WebRTC, talk controls and MSE/HLS fallback
   homepage: ""
   has_wiki: false
   has_discussions: false
@@ -60,10 +42,9 @@ immutable_releases:
   enabled: false
 
 actions:
-  enabled: true
   # Options: all, local_only, selected. SHA pinning applies separately.
-  # selected requires github_owned_allowed, verified_allowed,
-  # and patterns_allowed.
+  # selected requires github_owned_allowed, verified_allowed, and patterns_allowed.
+  enabled: true
   allowed_actions: all
   sha_pinning_required: false
   fork_pr_contributor_approval:
@@ -74,8 +55,7 @@ code_scanning:
   query_suite: default
   threat_model: remote
   # An empty list means GitHub detects the languages. Valid values:
-  # actions, c-cpp, csharp, go, java-kotlin, javascript-typescript,
-  # python, ruby, swift
+  # actions, c-cpp, csharp, go, java-kotlin, javascript-typescript, python, ruby, swift
   languages: []
 
 code_quality:
@@ -86,8 +66,8 @@ code_quality:
 
 ruleset:
   # Tailor manages one ruleset named "Tailor" and owns it entirely.
-  # active enforces the rules. disabled retains the ruleset without enforcement.
-  # Other rulesets apply independently of this setting.
+  # active enforces the rules. disabled keeps the ruleset on GitHub but
+  # GitHub ignores it, so a hand-made ruleset can govern instead.
   enforcement: active
   bypass_actors:
     # actor_type: RepositoryRole, Team, User, Integration, DeployKey
@@ -126,28 +106,41 @@ ruleset:
     required_status_checks:
       enabled: false
       parameters:
-        # When true, require branches to be up to date before merging.
+        # Require branches to be up to date before merging.
         strict_required_status_checks_policy: false
-        # When true, allow branch creation without status checks.
+        # Do not require status checks on creation.
         do_not_enforce_on_create: false
-        # context is the check name on a pull request,
-        # usually the GitHub Actions job name.
-        # Optional integration_id restricts the check to one app.
-        # 15368 is GitHub Actions.
+        # context is the check name as shown on a pull request. For a GitHub
+        # Actions job that is the job's name. integration_id is optional and
+        # restricts the check to one app; 15368 is GitHub Actions.
         required_status_checks: []
     code_scanning:
-      # Enable only when the tool has results for both the pull request
-      # commit and the base branch.
       enabled: false
       parameters:
         # tool is the tool name as GitHub shows it, for example CodeQL.
         # alerts_threshold: none, errors, errors_and_warnings, all
-        # security_alerts_threshold: none, critical, high_or_higher,
-        # medium_or_higher, all
+        # security_alerts_threshold: none, critical, high_or_higher, medium_or_higher, all
         code_scanning_tools:
           - tool: CodeQL
             alerts_threshold: errors
             security_alerts_threshold: high_or_higher
+
+# Pages is opt-in. Omission or enabled: false leaves Pages unmanaged.
+# generator: static (default) creates a starter in an empty path. Hugo and Jekyll need an existing site.
+# path: project-relative source directory, default pages.
+# branch: omit to use the current repository default branch.
+# cname: omit to preserve the domain, use "" to clear it, or set a domain.
+pages:
+  enabled: false
+  generator: static
+  path: pages
+  # branch: main
+  # cname: www.example.com
+  # Static only. Omit links to leave the page unchanged; {} clears its marked links.
+  # Use full HTTPS URLs, or a bare address for email. Empty values add no icon.
+  # links:
+  #   website: https://example.com
+  #   email: hello@example.com
 
 labels:
   - name: bug
@@ -156,47 +149,47 @@ labels:
 
   - name: documentation
     color: 04a5e5
-    description: "Documentation improvement"
+    description: Documentation improvement
 
   - name: duplicate
     color: 8839ef
-    description: "Already exists"
+    description: Already exists
 
   - name: enhancement
     color: 1e66f5
-    description: "New feature request"
+    description: New feature request
 
   - name: good first issue
     color: 40a02b
-    description: "Good for newcomers"
+    description: Good for newcomers
 
   - name: help wanted
     color: "179299"
-    description: "Extra attention needed"
+    description: Extra attention needed
 
   - name: invalid
     color: e64553
-    description: "Not valid or relevant"
+    description: Not valid or relevant
 
   - name: question
     color: 7287fd
-    description: "Needs more information"
+    description: Needs more information
 
   - name: wontfix
     color: dc8a78
-    description: "Will not be worked on"
+    description: Will not be worked on
 
   - name: dependencies
     color: fe640b
-    description: "Dependency update"
+    description: Dependency update
 
   - name: github_actions
     color: ea76cb
-    description: "GitHub Actions update"
+    description: GitHub Actions update
 
   - name: hacktoberfest-accepted
     color: df8e1d
-    description: "Hacktoberfest contribution"
+    description: Hacktoberfest contribution
 
 # Repository Actions variables are non-secret values.
 # Tailor creates or updates only declared variables and leaves others unchanged.
@@ -237,9 +230,6 @@ swatches:
   - path: SUPPORT.md
     alteration: always
 
-  # Tailor creates a missing root for always or first-fit,
-  # but never rewrites an existing root.
-  # If an existing root lacks the loader import, add: import 'just/loader.just'
   - path: justfile
     alteration: first-fit
 
@@ -276,10 +266,6 @@ swatches:
   - path: .github/workflows/build-go.yml
     alteration: first-fit
 
-  # Tailor never rewrites an existing root.
-  # If its package list lacks the loader, add:
-  # ++ import ./nix/loader.nix { inherit pkgs; }
-  # Review and add new Nix files to Git because flakes exclude untracked files.
   - path: flake.nix
     alteration: first-fit
 
@@ -321,4 +307,3 @@ swatches:
 
   - path: .tailor.yml
     alteration: always
-
