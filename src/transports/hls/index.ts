@@ -38,12 +38,15 @@ export function createHlsAdapter(options: HlsAdapterOptions = {}): TransportAdap
       if (!url) throw failure('configuration');
       mediaPath(context.client, url);
       const Engine = options.hls ?? Hls;
+      // Match the pinned hls.js example: canPlayType('...') can report maybe
+      // while native HLS still cannot decode this source. Choose the engine up front.
+      const bundledPlayback = Engine.isSupported();
       // Native video cannot carry Basic headers or inspect redirects. Only the verified
       // same-origin scoped cookie proxy confines all browser-managed child requests.
       const cookieProxy = context.client.profile.auth === 'session' && context.client.profile.sameOrigin
         && new URL(context.client.profile.baseUrl).pathname !== '/';
-      const nativePlayback = cookieProxy && Boolean(context.video.canPlayType('application/vnd.apple.mpegurl'));
-      if (!nativePlayback && !Engine.isSupported()) throw failure('unsupported-api');
+      const nativePlayback = !bundledPlayback && cookieProxy && Boolean(context.video.canPlayType('application/vnd.apple.mpegurl'));
+      if (!bundledPlayback && !nativePlayback) throw failure('unsupported-api');
       const scope = lifetime = new MediaLifetime(context, 'hls', nativePlayback);
       if (!scope.alive) return;
       try {

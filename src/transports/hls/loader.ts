@@ -72,7 +72,9 @@ export function createAuthorizedLoader(client: NvrClient, signal: AbortSignal, o
         try {
           const path = mediaPath(client, context.url);
           const headers = new Headers();
-          if (context.rangeStart !== undefined) {
+          // hls.js 1.7.4 initializes full-fragment loads with the 0/0 sentinel.
+          const fullResource = context.rangeStart === 0 && context.rangeEnd === 0;
+          if (context.rangeStart !== undefined && !fullResource) {
             const start = context.rangeStart, end = context.rangeEnd;
             if (!Number.isSafeInteger(start) || start < 0 || (end !== undefined && (!Number.isSafeInteger(end) || end <= start))) throw failure('configuration');
             headers.set('Range', `bytes=${start}-${end === undefined ? '' : end - 1}`);

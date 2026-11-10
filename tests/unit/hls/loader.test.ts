@@ -52,6 +52,17 @@ describe('authorized HLS loader', () => {
     const headers = f.authorizedFetch.mock.calls.at(-1)?.[1]?.headers as Headers;
     expect([...headers]).toEqual([['range', 'bytes=2-3']]); f.loader.destroy();
   });
+  it('loads hls.js full-fragment 0/0 ranges without a Range header', async () => {
+    const f = setup(); f.authorizedFetch.mockResolvedValueOnce(new Response(new Uint8Array([1, 2, 3])));
+    f.loader.load({ ...f.context, type: LoaderContextType.MEDIA_FRAGMENT, responseType: 'arraybuffer', rangeStart: 0, rangeEnd: 0 }, config, f.callbacks);
+    await flush(); expect(f.callbacks.onSuccess).toHaveBeenCalledOnce(); expect(f.failure).not.toHaveBeenCalled();
+    const headers = f.authorizedFetch.mock.calls[0]?.[1]?.headers as Headers;
+    expect(headers.has('Range')).toBe(false); f.loader.destroy();
+  });
+  it.each([[2, 0], [2, 2], [-1, 4], [0.5, 4], [0, -1]])('rejects malformed non-sentinel range %s/%s before fetching', async (rangeStart, rangeEnd) => {
+    const f = setup(); f.loader.load({ ...f.context, responseType: 'arraybuffer', rangeStart, rangeEnd }, config, f.callbacks);
+    await flush(); expect(f.authorizedFetch).not.toHaveBeenCalled(); expect(f.failure).toHaveBeenCalledOnce(); f.loader.destroy();
+  });
   it('destroys a pending loader without callbacks and cancels late response bodies', async () => {
     const f = setup(); let resolve!: (r: Response) => void; f.authorizedFetch.mockReturnValueOnce(new Promise(r => { resolve = r; }));
     f.loader.load(f.context, config, f.callbacks); f.loader.destroy(); const cancel = vi.fn(); resolve(new Response(new ReadableStream({ cancel })));

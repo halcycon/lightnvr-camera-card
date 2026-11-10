@@ -28,13 +28,50 @@ describe('HLS adapter', () => {
     await a.setListening(true); expect(f.video.muted).toBe(false); expect('getAudioSender' in a).toBe(false);
     await a.stop(); await a.stop(); expect(player.destroy).toHaveBeenCalledTimes(1); expect(vi.getTimerCount()).toBe(0);
   });
-  it('prefers native playback with scoped cookie auth even when locally default-muted', async () => {
+  it.each(['maybe', 'probably'])('prefers bundled hls.js when native also reports %s', async support => {
+    const f = fixture(); f.video.canPlayType.mockReturnValue(support);
+    const a = createHlsAdapter(options); await a.start(f.context);
+    expect(FakeHls.instances).toHaveLength(1);
+    const player = FakeHls.instances[0]!;
+    expect(player.loadSource).toHaveBeenCalledWith(f.context.client.mediaUrls(f.context.source, true).go2rtcHls);
+    expect(player.config.loader).toBeTypeOf('function'); expect(f.video.src).toBe(''); expect(f.video.crossOrigin).toBeNull();
+    expect(f.video.muted).toBe(true); expect(f.events).toEqual([]);
+    player.emit(Hls.Events.MANIFEST_PARSED); f.video.frame();
+    expect(f.events).toEqual([{ type: 'first-frame', transport: 'hls' }]);
+    await a.stop(); expect(player.destroy).toHaveBeenCalledTimes(1);
+  });
+  it('fails before requests when neither engine supports HLS', async () => {
+    FakeHls.isSupported.mockReturnValue(false); const f = fixture(), a = createHlsAdapter(options);
+    await expect(a.start(f.context)).rejects.toMatchObject({ failure: { code: 'unsupported-api' } });
+    expect(FakeHls.instances).toHaveLength(0); expect(f.video.src).toBe(''); expect(f.video.play).not.toHaveBeenCalled();
+    expect(f.authorizedFetch).not.toHaveBeenCalled(); expect(vi.getTimerCount()).toBe(0);
+  });
+  it.each(['basic', 'cross-origin', 'unscoped'])('rejects native-only %s without the required cookie scope', async mode => {
+    FakeHls.isSupported.mockReturnValue(false); const f = fixture(); f.video.canPlayType.mockReturnValue('maybe');
+    if (mode === 'basic') f.context.client.profile.auth = 'basic';
+    if (mode === 'cross-origin') f.context.client.profile.sameOrigin = false;
+    if (mode === 'unscoped') f.context.client.profile.baseUrl = 'https://dashboard.example.invalid/';
+    const a = createHlsAdapter(options); await expect(a.start(f.context)).rejects.toMatchObject({ failure: { code: 'unsupported-api' } });
+    expect(FakeHls.instances).toHaveLength(0); expect(f.video.src).toBe(''); expect(f.authorizedFetch).not.toHaveBeenCalled();
+  });
+  it('retains native-only autoplay suspension without switching engines or retrying', async () => {
+    FakeHls.isSupported.mockReturnValue(false); const f = fixture(); f.video.canPlayType.mockReturnValue('maybe');
+    f.video.play.mockRejectedValue(new DOMException('', 'NotAllowedError'));
+    const a = createHlsAdapter(options); await a.start(f.context); await vi.advanceTimersByTimeAsync(60000);
+    expect(f.events).toMatchObject([{ type: 'failure', failure: { code: 'autoplay' } }]);
+    expect(f.video.src).toContain('go2rtc/api/stream.m3u8'); expect(f.video.pause).not.toHaveBeenCalled();
+    expect(FakeHls.instances).toHaveLength(0); expect(vi.getTimerCount()).toBe(0);
+    f.abort.abort(); expect(f.video.src).toBe(''); await a.stop();
+  });
+  it('retains native-only playback with scoped cookie auth even when locally default-muted', async () => {
+    FakeHls.isSupported.mockReturnValue(false);
     const f = fixture(); f.video.canPlayType.mockReturnValue('probably');
     const a = createHlsAdapter(options); await a.start(f.context);
     expect(f.video.src).toContain('go2rtc/api/stream.m3u8'); expect(f.video.crossOrigin).toBe('use-credentials'); expect(f.video.muted).toBe(true); expect(FakeHls.instances).toHaveLength(0);
     await a.stop(); expect(f.video.src).toBe('');
   });
   it.each([null, 1, 2, 3, 4])('treats opaque native media error %s as a terminal possible authorization denial', async code => {
+    FakeHls.isSupported.mockReturnValue(false);
     const f = fixture(); f.video.canPlayType.mockReturnValue('probably');
     const a = createHlsAdapter(options); await a.start(f.context);
     f.video.error = code === null ? null : { code };
@@ -45,6 +82,7 @@ describe('HLS adapter', () => {
     f.video.dispatchEvent(new Event('error')); expect(f.events).toHaveLength(1); await a.stop();
   });
   it('treats a native play rejection other than autoplay as an opaque possible denial', async () => {
+    FakeHls.isSupported.mockReturnValue(false);
     const f = fixture(); f.video.canPlayType.mockReturnValue('probably');
     f.video.play.mockRejectedValue(new DOMException('never expose upstream details', 'NotSupportedError'));
     const a = createHlsAdapter(options); await a.start(f.context); await vi.advanceTimersByTimeAsync(60000);

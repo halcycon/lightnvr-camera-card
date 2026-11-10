@@ -14,8 +14,15 @@ source and permitted configured listening. Substreams, unrelated manual sources,
 and listen=false cannot use that route. Default local mute does not exclude
 native HLS because listening permission and output mute are separate.
 
-Native browser playback is preferred only when `canPlayType` supports HLS and
-the client uses a same-origin, non-root, cookie-scoped proxy. That proxy must
+Playback engine selection is separate from the server provider and happens before
+any media request. Bundled hls.js is preferred whenever `Hls.isSupported()` is true,
+even when native `canPlayType` returns `maybe` or `probably`. This follows the
+[pinned official hls.js 1.7.4 example](https://github.com/video-dev/hls.js/blob/v1.7.4/README.md#embedding-hlsjs):
+a nonempty native capability result does not guarantee an asset will decode.
+Native browser playback is used only when bundled hls.js is unsupported, native
+`canPlayType` supports HLS, and the client uses a same-origin, non-root,
+cookie-scoped proxy. Neither engine available means `unsupported-api` before
+requests. No engine switch follows a native failure. That proxy must
 implement the verified recipe in `docs/connectivity.md`: it confines playlists,
 children and redirects and preserves credential binding. A pathname alone cannot
 prove an operator deployed that recipe. This adapter cannot attach headers to
@@ -38,7 +45,10 @@ foreign origins, userinfo, out-of-prefix paths, traversal, unscoped routes and
 unsupported variable URLs. Existing query bytes/session IDs are preserved;
 credentials are never added to URLs. Redirects are rejected, not followed.
 Only a validated byte Range is forwarded from loader context headers; the client
-owns authentication. Bodies are bounded to 1 MiB text/16 MiB binary and 4096
+owns authentication. The pinned fragment loader initializes non-range requests
+with `rangeStart=0, rangeEnd=0`; this full-resource sentinel sends no Range header,
+matching its [official loader](https://github.com/video-dev/hls.js/blob/v1.7.4/src/utils/fetch-loader.ts).
+Other invalid/equal/reversed byte ranges are rejected. Bodies are bounded to 1 MiB text/16 MiB binary and 4096
 chunks, with a maximum 30-second loader deadline. Aborts cancel readers and late
 responses. Text playlists are validated before hls.js receives them.
 
