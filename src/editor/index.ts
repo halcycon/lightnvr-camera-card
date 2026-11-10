@@ -13,7 +13,7 @@ const settings: { title: string; fields: [string, string, string[]?][] }[] = [
   { title: 'Retry', fields: [['retry.base_ms', 'Base milliseconds'], ['retry.cap_ms', 'Cap milliseconds'], ['retry.attempts', 'Attempts'], ['retry.jitter', 'Jitter (0–1)']] },
   { title: 'Audio and talk', fields: [['audio.enabled', 'Audio enabled'], ['audio.listen', 'Request listening'], ['audio.muted', 'Start muted'], ['audio.microphone', 'Allow microphone control'], ['audio.talk_mode', 'Talk mode', ['ptt', 'toggle']], ['audio.volume', 'Volume (0–1)']] },
   { title: 'Controls (default follows viewer capability)', fields: controls.map(name => [`controls.${name}`, name.replaceAll('_', ' '), ['default', 'true', 'false']]) },
-  { title: 'Layout and visibility', fields: [['layout.aspect_ratio', 'Aspect ratio (number)'], ['layout.object_fit', 'Video fit', ['contain', 'cover']], ['layout.fullscreen_main', 'Use main in fullscreen'], ['visibility.hidden', 'When document hidden', ['pause', 'continue']], ['visibility.offscreen', 'When offscreen', ['pause', 'continue']]] },
+  { title: 'Layout and visibility', fields: [['layout.aspect_ratio', 'Aspect ratio (number)'], ['layout.object_fit', 'Video fit', ['contain', 'cover']], ['layout.fullscreen_main', 'Use main in fullscreen'], ['playback_visibility.hidden', 'When document hidden', ['pause', 'continue']], ['playback_visibility.offscreen', 'When offscreen', ['pause', 'continue']]] },
 ];
 const connectionFields = new Set(['server', 'username', 'password', 'auth', 'credential_storage', 'go2rtc_path']);
 const optionalNumbers = new Set(['timeouts.webrtc_ms', 'timeouts.mse_ms', 'timeouts.hls_ms']);

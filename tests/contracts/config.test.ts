@@ -1,9 +1,28 @@
 import { describe, it, expect } from 'vitest';
-import { cardConfigSchema, validateConfig, migrateLegacy, loginResponseSchema, streamPageSchema } from '../../src/contracts';
+import { cardConfigSchema, validateConfig, stripHaMetadata, migrateLegacy, loginResponseSchema, streamPageSchema } from '../../src/contracts';
 import example from '../fixtures/contracts/config.json';
 import legacy from '../fixtures/contracts/legacy.json';
 const base={type:'custom:lightnvr-camera-card',server:'/lightnvr/front/',stream:'generated'};
 describe('frozen configuration',()=>{
+ it('preserves native HA metadata separately from playback visibility',()=>{
+  const metadata={grid_options:{columns:24,rows:'auto',min_rows:0},view_layout:{grid_area:'front',custom_layout:{column:2}},layout_options:{grid_columns:'full'},visibility:[{condition:'screen',media_query:'(min-width: 600px)'}],index:0,view_index:1,disabled:false};
+  const config=validateConfig({...base,...metadata,playback_visibility:{hidden:'continue'}});
+  expect(config).toMatchObject(metadata);
+  expect(config.playback_visibility).toEqual({hidden:'continue',offscreen:'pause'});
+  expect(stripHaMetadata(config)).toEqual(validateConfig({...base,playback_visibility:{hidden:'continue'}}));
+  expect(validateConfig(JSON.parse(JSON.stringify(config)))).toEqual(config);
+ });
+ it('normalizes the pre-release visibility-policy object without consuming HA conditions',()=>{
+  const config=validateConfig({...base,visibility:{offscreen:'continue'}});
+  expect(config.visibility).toBeUndefined();expect(config.playback_visibility.offscreen).toBe('continue');
+  expect(cardConfigSchema.safeParse({...base,visibility:{hidden:'pause'},playback_visibility:{hidden:'continue'}}).success).toBe(false);
+ });
+ it('keeps native HA layout and condition metadata when migrating an existing card',()=>{
+  const metadata={grid_options:{columns:24,rows:'auto'},view_layout:{grid_area:'front'},visibility:[{condition:'screen',media_query:'(min-width: 600px)'}]};
+  const migrated=migrateLegacy({server:'https://viewer:owned-password@example.test/go2rtc/',url:'front_door_sub',...metadata});
+  expect(migrated.config).toMatchObject(metadata);expect(migrated.config.source).toBe('front_door_sub');
+  expect(migrated.config.server).toBe('https://example.test/');expect(migrated.config.playback_visibility.hidden).toBe('pause');
+ });
  it('validates all plan examples, defaults and JSON round trips',()=>{
   for(const input of [base,example,{...example,server:'https://nvr.example.test/'},{...base,stream:'driveway',profile:'sub'}]){
    const config=validateConfig(input); expect(validateConfig(JSON.parse(JSON.stringify(config)))).toEqual(config);

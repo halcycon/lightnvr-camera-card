@@ -1,4 +1,4 @@
-import { NvrError, type CameraSummary, type CardConfigV1, type ClientConfig, type PlaybackController, type PlaybackDependencies, type PlaybackFailure, type PlaybackSnapshot, type PlaybackState, type SourceSelection, type TalkState, type Transport, type TransportAdapter, type TransportEvent } from '../contracts';
+import { stripHaMetadata, NvrError, type CameraSummary, type CardConfigV1, type ClientConfig, type PlaybackController, type PlaybackDependencies, type PlaybackFailure, type PlaybackSnapshot, type PlaybackState, type SourceSelection, type TalkState, type Transport, type TransportAdapter, type TransportEvent } from '../contracts';
 import { selectSource } from '../api/mapping';
 import { failure, safeDiagnostic } from '../api/safety';
 import { acquireStartup } from './startup';
@@ -41,7 +41,7 @@ export function createPlaybackController({ client, createTransport, talk }: Play
   let cleanup: Promise<void> = Promise.resolve();
   let disposal: Promise<void> | undefined;
   const document = globalThis.document;
-  const suspended = () => !!config && ((!visible && config.visibility.offscreen === 'pause') || (document?.hidden && config.visibility.hidden === 'pause'));
+  const suspended = () => !!config && ((!visible && config.playback_visibility.offscreen === 'pause') || (document?.hidden && config.playback_visibility.hidden === 'pause'));
   const publish = (patch: SnapshotPatch) => {
     const next = { ...snapshot, ...patch };
     if (next.failure === undefined) delete next.failure;
@@ -205,10 +205,10 @@ export function createPlaybackController({ client, createTransport, talk }: Play
     get snapshot() { return snapshot; },
     start(element, value, signal) {
       if (disposed) return Promise.resolve();
-      const key = JSON.stringify(value);
+      const key = JSON.stringify(stripHaMetadata(value));
       if (running && element === video && key === configKey && !signal?.aborted) return Promise.resolve();
       detachSignal?.(); detachSignal = undefined;
-      video = element; config = structuredClone(value); configKey = key; running = true;
+      video = element; config = stripHaMetadata(value); configKey = key; running = true;
       if (signal) {
         const abort = () => { void stop(); };
         signal.addEventListener('abort', abort, { once: true });

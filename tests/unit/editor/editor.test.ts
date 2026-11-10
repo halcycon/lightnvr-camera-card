@@ -16,6 +16,20 @@ function fixture(inventory: readonly CameraSummary[] = [camera()]) {
 }
 afterEach(() => { document.body.replaceChildren(); vi.restoreAllMocks(); });
 
+it('round trips native HA conditions/layout while keeping a tested session and private credentials', async () => {
+  const {model,client,emit}=fixture();
+  model.edit({...model.config,credential_storage:'session',username:'viewer',password:'owned-private'},true);
+  await model.testConnection(); const disposed=vi.mocked(client.dispose).mock.calls.length;
+  const metadata={grid_options:{columns:24,rows:'auto'},view_layout:{grid_area:'front'},visibility:[{condition:'screen',media_query:'(min-width: 600px)'}]};
+  model.setConfig({...persistentConfig(model.config),...metadata});
+  expect(model.tested).toBe(true);expect(client.dispose).toHaveBeenCalledTimes(disposed);
+  expect(model.config.password).toBe('owned-private');
+  model.edit({...model.config,title:'After resize'});
+  const saved=emit.mock.lastCall![0];expect(saved).toMatchObject(metadata);expect(saved).not.toHaveProperty('password');
+  const cards=parse(generateYaml(model.config,[camera()],'main','cards'));
+  expect(cards[0]).toMatchObject(metadata);expect(cards[0].playback_visibility).toEqual({hidden:'pause',offscreen:'pause'});
+});
+
 describe('configuration and YAML', () => {
   it('provides independent schema-valid defaults', () => { const a = getStubConfig(); a.retry.attempts = 0; expect(getStubConfig().retry.attempts).toBe(5); expect(validateConfig(getStubConfig())).toEqual(getStubConfig()); });
   it('migrates exact front_door_sub without inferring another suffix or registering the old card', () => {
@@ -44,10 +58,10 @@ describe('configuration and YAML', () => {
   it.each([{ status: 'disabled' as const }, { privacy: true }, { capabilities: { 'live.view': 'denied' as const } }])('blocks unavailable cameras', extra => expect(() => cameraConfig(getStubConfig(), camera('private', extra), 'main')).toThrow());
   it('rejects missing substreams', () => expect(() => cameraConfig(getStubConfig(), camera('main', { sources: { main: 'main' } }), 'sub')).toThrow('No managed substream'));
   it.each(['grid', 'cards'] as const)('parses generated %s with all cards validated, advanced fields retained, secrets excluded', mode => {
-    const c = validateConfig({ ...getStubConfig(), username: 'viewer', password: 'secret', retry: { attempts: 7 }, visibility: { hidden: 'continue' }, ice_servers: [{ urls: 'turn:example.test', credential: 'secret' }] });
+    const c = validateConfig({ ...getStubConfig(), username: 'viewer', password: 'secret', retry: { attempts: 7 }, playback_visibility: { hidden: 'continue' }, ice_servers: [{ urls: 'turn:example.test', credential: 'secret' }] });
     const yaml = generateYaml(c, [camera('one'), camera('two')], 'sub', mode);
     const parsed = parse(yaml); const cards = mode === 'grid' ? parsed.cards : parsed;
-    expect(cards).toHaveLength(2); for (const card of cards) { expect(validateConfig(card)).toMatchObject({ profile: 'sub', retry: { attempts: 7 }, visibility: { hidden: 'continue' } }); expect(card).not.toHaveProperty('password'); expect(card.ice_servers).toEqual([{ urls: 'turn:example.test', credential: 'REPLACE_WITH_TURN_CREDENTIAL' }]); }
+    expect(cards).toHaveLength(2); for (const card of cards) { expect(validateConfig(card)).toMatchObject({ profile: 'sub', retry: { attempts: 7 }, playback_visibility: { hidden: 'continue' } }); expect(card).not.toHaveProperty('password'); expect(card.ice_servers).toEqual([{ urls: 'turn:example.test', credential: 'REPLACE_WITH_TURN_CREDENTIAL' }]); }
     expect(JSON.stringify(parsed)).not.toContain('secret'); if (mode === 'grid') expect(parsed).toMatchObject({ type: 'grid', columns: 2, square: false });
   });
   it('rejects empty selection and invalid grid size', () => { expect(() => generateYaml(getStubConfig(), [], 'main', 'grid')).toThrow(); expect(() => generateYaml(getStubConfig(), [camera()], 'main', 'grid', 0)).toThrow(); });
@@ -134,8 +148,8 @@ describe('connection/discovery lifecycle', () => {
     expect(model.tested).toBe(false); expect(client.discover).not.toHaveBeenCalled(); expect(model.error).toContain('Test this connection');
   });
   it('preserves advanced fields through edits; rejects unknown fields without emitting', () => {
-    const { model, emit } = fixture(); const c = validateConfig({ ...getStubConfig(), ice_servers: [{ urls: 'stun:example.test' }], visibility: { offscreen: 'continue' }, timeouts: { webrtc_ms: 1234 }, viewer_url: 'https://example.test/' });
-    model.setConfig(c); model.edit({ ...model.config, title: 'Edited' }); expect(emit.mock.lastCall![0]).toMatchObject({ ice_servers: c.ice_servers, visibility: c.visibility, timeouts: c.timeouts, viewer_url: c.viewer_url });
+    const { model, emit } = fixture(); const c = validateConfig({ ...getStubConfig(), ice_servers: [{ urls: 'stun:example.test' }], playback_visibility: { offscreen: 'continue' }, timeouts: { webrtc_ms: 1234 }, viewer_url: 'https://example.test/' });
+    model.setConfig(c); model.edit({ ...model.config, title: 'Edited' }); expect(emit.mock.lastCall![0]).toMatchObject({ ice_servers: c.ice_servers, playback_visibility: c.playback_visibility, timeouts: c.timeouts, viewer_url: c.viewer_url });
     emit.mockClear(); expect(model.edit({ ...model.config, unsupported: true })).toBe(false); expect(emit).not.toHaveBeenCalled();
   });
   it('migration preview never applies or connects before explicit application', () => {

@@ -27,7 +27,7 @@ export function parseConfigYaml(text: string): unknown {
 }
 export function migrationPreview(text: string): { config: CardConfigV1; warnings: readonly string[] } {
   try { return migrateLegacy(parseConfigYaml(text)); }
-  catch { throw new Error('Legacy import rejected. Use only server, url, mode, media and ui; video must be enabled. Check the server URL and transport/audio combination.'); }
+  catch { throw new Error('Legacy import rejected. Use supported server, url, mode, media, ui and native HA layout fields; video must be enabled. Check the server URL and transport/audio combination.'); }
 }
 function redactIceUrl(url: string): string {
   return url.replace(/^((?:turns?|stuns?):(?:\/\/)?)[^@]+@/i, '$1REDACTED@');

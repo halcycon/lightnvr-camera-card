@@ -75,7 +75,7 @@ Reference controls: [WebRTCVideoCell](https://github.com/opensensor/lightNVR/blo
 
 ## Proposed configuration contract
 
-T1 freezes exact schema, defaults and editor round-trip rules before parallel work. This is proposed syntax, not an already installable card. `server` means NVR root; `go2rtc_path` defaults to `go2rtc/` relative to it. Absolute remote root and same-origin proxy prefix are both representable. Optional advanced fields include exact source override, HLS provider (`auto`, `go2rtc`, `native`), per-transport timeouts, retry settings, audio/video enable flags, controls visibility, aspect ratio/object fit, visibility policy and ICE override. Invalid combinations are rejected, not silently coerced.
+T1 freezes exact schema, defaults and editor round-trip rules before parallel work. This is proposed syntax, not an already installable card. `server` means NVR root; `go2rtc_path` defaults to `go2rtc/` relative to it. Absolute remote root and same-origin proxy prefix are both representable. Optional advanced fields include exact source override, HLS provider (`auto`, `go2rtc`, `native`), per-transport timeouts, retry settings, audio/video enable flags, controls visibility, aspect ratio/object fit, playback_visibility policy and ICE override. Native HA visibility conditions and grid/layout metadata round-trip separately without restarting playback. Invalid combinations are rejected, not silently coerced.
 
 ```yaml
 type: custom:lightnvr-camera-card
@@ -208,9 +208,9 @@ Every task starts Pending. The coordinator alone maintains status/log/file recor
 - **description**: Register the custom element and `window.customCards`; implement `setConfig`, `hass`, connect/disconnect lifecycle, card sizing and supported Sections grid options; render themed responsive video and the mapped viewer controls. Provide focus/touch-accessible PTT, active-mic indicator, local meter, capability-aware PTZ/day-night/snapshot/recording/privacy/detection and lightNVR links. UI invokes typed clients/controllers, not duplicated authentication or raw player code.
 - **acceptance**: Works in panel, masonry and native HA grid/stack layouts; controls are individually configurable and clear about unsupported/denied capabilities. Speaker and microphone have independent states. All interaction exits stop talk and PTZ; server-wide actions require the stated confirmation and never run as recovery. Large and small cards remain usable, theme-aware and keyboard accessible. Local snapshot cannot bypass snapshot permissions or tainted canvas restrictions.
 - **validation**: `npm run test:unit -- tests/unit/card tests/unit/controls`; `npm run typecheck`; `npm run lint`; `npm run build`. Cover config changes during pending login/media, repeated hass updates, lifecycle teardown, keyboard/pointer cancellation, control capability matrix, denied mutations, polling suspension and scoped DOM IDs. Human browser checks remain in T10.
-- **status**: Running
-- **log**: 2026-11-10: full-access native Herdr worker dispatched after T6/T8 verification (combined 373 tests/typecheck/lint pass). Monitor freshness gate blocked initial launch during owned test-image disk exhaustion; monitor restored before the single actual launch.
-- **files edited/created**:
+- **status**: Verified
+- **log**: 2026-11-10 20:15 UTC: second automatic quota recovery confirmed100% allowance; same idle worker and command quiescence reconciled. Coordinator independently passed511 tests including120 card/control tests, typecheck/lint and full temporary card bundle. HA grid/visibility metadata preserved separately from canonical playback_visibility; metadata-only updates preserve media/auth/talk. Actual HA/browser/hardware acceptance remains T10. 2026-11-10: full-access native Herdr worker dispatched after T6/T8 verification (combined 373 tests/typecheck/lint pass). Monitor freshness gate blocked initial launch during owned test-image disk exhaustion; monitor restored before the single actual launch.
+- **files edited/created**: src/card.ts, src/index.ts, src/ui/, tests/unit/card/, tests/unit/controls/; coordinator serialized shared config/editor/playback HA compatibility changes.
 
 ### T8: Visual connection/discovery editor and YAML migration
 - **depends_on**: [T2]

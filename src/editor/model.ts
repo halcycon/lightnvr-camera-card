@@ -1,5 +1,5 @@
 import { createNvrClient, safeDiagnostic } from '../api';
-import { validateConfig, type CardConfigV1, type CameraSummary, type ClientConfig, type NvrClient, type NvrClientFactory } from '../contracts';
+import { validateConfig, stripHaMetadata, HA_METADATA_KEYS, type CardConfigV1, type CameraSummary, type ClientConfig, type NvrClient, type NvrClientFactory } from '../contracts';
 import { cameraConfig, capabilityProblems, configProblem, getStubConfig, migrationPreview, persistentConfig } from './config';
 
 const help: Record<string, string> = {
@@ -32,6 +32,13 @@ export class EditorModel {
     try { next = validateConfig(input); } catch (e) { throw new Error(configProblem(e)); }
     // HA echoes emitted config; do not invalidate a connection for an identical echo.
     if (JSON.stringify(persistentConfig(this.config)) === JSON.stringify(next)) return;
+    if (JSON.stringify(stripHaMetadata(persistentConfig(this.config))) === JSON.stringify(stripHaMetadata(next))) {
+      const copy: Record<string, unknown> = { ...this.config };
+      for (const key of HA_METADATA_KEYS) {
+        if (next[key] === undefined) delete copy[key]; else copy[key] = next[key];
+      }
+      this.config = validateConfig(copy); this.changed(); return;
+    }
     this.cancel(); this.config = next;
     this.credentials = next.username !== undefined || next.password !== undefined ? { username: next.username ?? '', password: next.password ?? '' } : undefined;
     this.inventory = []; this.capabilities = undefined; this.tested = false; this.selected.clear(); this.migration = undefined;

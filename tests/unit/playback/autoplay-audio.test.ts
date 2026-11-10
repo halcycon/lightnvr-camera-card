@@ -97,7 +97,7 @@ describe('speaker and microphone independence', () => {
     gesture.abort(); expect(h.controller.snapshot.talking).toBe(false);
   });
   it('never starts capture while hidden even if video continues', async () => {
-    const h = harness(); await h.start({ audio: { microphone: true }, visibility: { offscreen: 'continue' } }); h.last().frame();
+    const h = harness(); await h.start({ audio: { microphone: true }, playback_visibility: { offscreen: 'continue' } }); h.last().frame();
     await h.controller.setVisible(false);
     await expect(h.controller.startTalk(new AbortController().signal)).rejects.toMatchObject({ failure: { code: 'policy' } });
     expect(h.talk.start).not.toHaveBeenCalled();

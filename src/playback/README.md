@@ -82,3 +82,5 @@ They establish state/cancellation/resource behavior, including ten-card FIFO
 admission and serialized delayed sender teardown; they do not prove decoded
 upstream media, physical camera talk, Safari/Companion or HA/HACS compatibility.
 Those remain T10 integration evidence, subject to the T1/T3 receipt boundaries.
+
+Native HA metadata is excluded from controller configuration identity: resizing/placement/HA conditions alone never restart playback or capture. Playback suspension reads playback_visibility.hidden/offscreen; HA visibility is preserved only as condition metadata.

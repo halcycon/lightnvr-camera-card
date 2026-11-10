@@ -30,7 +30,7 @@ The browser card is a Lit custom element bundled as one ES module with hls.js. H
 | `audio` | enabled=true, listen=true, muted=true, microphone=false, talk_mode=ptt, volume=1; disabled requires listen=false and microphone=false; microphone requires WebRTC in order |
 | `controls` | Optional booleans: speaker, microphone, fullscreen, snapshot, transport, profile, zoom, ptz, daynight, recording, privacy, detection, refresh_source, timeline. UI defaults viewer controls on where capable; privileged/privacy/refresh mutations off unless opted in |
 | `layout` | aspect_ratio=16/9, object_fit=contain (or cover), fullscreen_main=false |
-| `visibility` | hidden=pause, offscreen=pause; each may be continue. Both pause conditions must clear before resuming |
+| `playback_visibility` | hidden=pause, offscreen=pause; each may be continue. Both pause conditions must clear before resuming. Native HA `visibility` remains a condition array |
 | `ice_servers` | Optional explicit RTCIceServer list (including empty list); omitted uses server ICE. Only stun/stuns/turn/turns URLs; optional username/credential; credentials redacted like login secrets |
 
 Audio request is intersected with server instance policy and separate listen/talk grants. `listen` controls negotiation; `muted`/volume control local playback. Microphone configuration permits a control; it never acquires a device without a gesture. PTT is the default talk mode. Missing backend capability fields cannot override a denial.
@@ -73,3 +73,5 @@ state; an explicit retry/play gesture resumes video.play() rather than opening
 a second player. Never resume microphone transmission with that gesture.
 
 The optional viewer_url config is an explicit NVR web-UI base for timeline/open links. The scoped API/media proxy intentionally does not expose lightNVR HTML/assets. UI links must be hidden unless viewer_url is configured or a direct, known external server root can be used; never imply that the restricted API prefix serves the whole NVR UI.
+
+Native HA grid_options, legacy layout_options, view_layout, condition-array visibility and index/view_index/disabled metadata are preserved in configuration/editor/migration/YAML round trips and excluded from media identity. Playback policy uses playback_visibility. The pre-release object visibility alias normalizes to playback_visibility when unambiguous. HA owns layout/condition evaluation; the card never treats metadata as a media URL or authorization policy.

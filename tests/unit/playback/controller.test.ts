@@ -10,6 +10,13 @@ afterEach(async () => {
 });
 
 describe('transport decisions and bounded recovery', () => {
+  it('preserves a healthy player and auth reference across HA layout-only config updates', async () => {
+    const h = harness(); await h.start(); h.last().frame(); const adapter = h.last();
+    const logins = h.api.client.connect.mock.calls.length;
+    await h.controller.start(h.video.asVideo(), configuration({ grid_options: { columns: 24, rows: 'auto' }, visibility: [{condition:'screen',media_query:'(min-width: 600px)'}], view_layout: { grid_area: 'door' } }));
+    expect(h.last()).toBe(adapter); expect(h.adapters).toHaveLength(1); expect(adapter.stop).not.toHaveBeenCalled();
+    expect(h.api.client.connect).toHaveBeenCalledTimes(logins); expect(h.controller.snapshot.state).toBe('playing');
+  });
   it('preserves explicit manual sources with unknown camera identity after successful empty discovery', async () => {
     const api = mockClient(); api.client.discover.mockResolvedValue([]);
     const h = harness({ api }); await h.start({ stream: 'manual-selector', source: 'generated-exact_sub' });
@@ -167,13 +174,13 @@ describe('generation and resource ownership', () => {
     expect(h.talk.start).toHaveBeenCalledOnce();
   });
   it('offscreen continue preserves video but always stops talk', async () => {
-    const h = harness(); await h.start({ visibility: { offscreen: 'continue' }, audio: { microphone: true } }); h.last().frame();
+    const h = harness(); await h.start({ playback_visibility: { offscreen: 'continue' }, audio: { microphone: true } }); h.last().frame();
     await h.controller.startTalk(new AbortController().signal); await h.controller.setVisible(false); await h.controller.setVisible(true);
     expect(h.adapters).toHaveLength(1); expect(h.last().stop).not.toHaveBeenCalled(); expect(h.controller.snapshot.talking).toBe(false);
   });
   it('document hide policy is independent of offscreen continue', async () => {
     const document = Object.assign(new EventTarget(), { hidden: false }); vi.stubGlobal('document', document);
-    const h = harness(); await h.start({ visibility: { offscreen: 'continue', hidden: 'pause' } }); h.last().frame();
+    const h = harness(); await h.start({ playback_visibility: { offscreen: 'continue', hidden: 'pause' } }); h.last().frame();
     document.hidden = true; document.dispatchEvent(new Event('visibilitychange')); await flush(); expect(h.controller.snapshot.state).toBe('suspended');
     await h.controller.setVisible(false); document.hidden = false; document.dispatchEvent(new Event('visibilitychange')); await flush();
     expect(h.adapters).toHaveLength(2);
