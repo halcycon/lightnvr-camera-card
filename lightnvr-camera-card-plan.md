@@ -175,8 +175,8 @@ Every task starts Pending. The coordinator alone maintains status/log/file recor
 - **description**: Implement HTTP SDP signaling, bounded complete ICE gathering, server ICE settings with optional override, supported codec preferences and no invented HTTP candidate API. Negotiate the audio sender when talk is enabled/authorized; capture on gesture and attach/detach safely. Handle restart/cancellation, first decoded frame, ICE grace, permission/secure-context failure, remote track end and stats.
 - **acceptance**: Video and listen work independently; PTT and toggle send only while requested. Stop/release before permission resolves never sends later; reconnect cannot attach to an old or replacement peer accidentally; failure/unmount stops every local track and meter. No automatic microphone restart. TLS error includes HA document origin and NVR signaling context. Audio disabled overrides card config.
 - **validation**: `npm run test:unit -- tests/unit/webrtc tests/unit/audio`; `npm run typecheck`. Include delayed and denied permission, sender attach rejection, rapid press/release, overlapping starts, release during attach, stale sender, missing microphone, no secure context, no-video despite ICE success, timeout and aborted SDP-body cases. Real decoded media and camera talk are verified separately in T10.
-- **status**: Pending
-- **log**:
+- **status**: Running
+- **log**: 2026-11-10: verified native full-access Herdr worker registered and dispatched after T2/T3 verification and dependency audit remediation; current contracts include autoplay suspension and observable talk state.
 - **files edited/created**:
 
 ### T5: MSE and HLS adapters
@@ -186,9 +186,9 @@ Every task starts Pending. The coordinator alone maintains status/log/file recor
 - **description**: MSE/ManagedMediaSource codec negotiation and bounded binary append queues, live buffer trim/quota recovery and authenticated WS lifecycle. HLS uses native playback where supported with proven cookie auth, otherwise bundled hls.js with authorized requests for every manifest/segment. Implement explicit HLS-provider policy matching server force-native settings, browser feature detection, first-frame deadline and bounded recovery.
 - **acceptance**: Both fallback transports render real generated media; speaker works when codec and rights permit; neither exposes talk. MSE buffer growth is bounded and object URLs are revoked. HLS child URLs retain prefix and session; credentials never leak to an arbitrary manifest origin/redirect. HLS-provider selection does not silently bypass denied go2rtc or change a server source. Cleanup destroys loaders, WS, SourceBuffers, callbacks and timers.
 - **validation**: `npm run test:unit -- tests/unit/mse tests/unit/hls`; `npm run typecheck`. Cover codec rejection, binary-before-negotiation, append overflow, quota error, missing API, WS close/origin denial, HLS 404/401/403, master-to-child paths, credential-preserving init/segment loads, stream-ID restart and lifecycle destruction. T10 validates real browser rendering.
-- **status**: Pending
-- **log**:
-- **files edited/created**:
+- **status**: Verified
+- **log**: 2026-11-10: coordinator verified all 53 focused tests in combined 243-test run, typecheck/lint, reviewed temporary builds and independently passed Chromium generated video/audio decoding, local unmute and teardown. Opaque native/WS failures are deliberately terminal; real upstream/device acceptance remains T10. 2026-11-10: verified native full-access Herdr worker registered and dispatched after T2/T3 verification and dependency audit remediation; current contracts include autoplay suspension and observable talk state.
+- **files edited/created**: src/transports/mse/, src/transports/hls/, tests/unit/mse/, tests/unit/hls/, tests/fixtures/media/.
 
 ### T6: Playback orchestration, fallback and multi-card resource limits
 - **depends_on**: [T4, T5]
@@ -314,6 +314,14 @@ Execution is a separate request. Concrete entry point:
 
 If Herdr, durable journal permissions, writable project/Git access or the required test fixture are unavailable, report the specific execution prerequisite before dispatching dependent workers. The plan remains usable for sequential execution when explicitly requested; no unverified Herdr control is attempted.
 
-## Execution hold checkpoint (2026-11-09)
+## Historical execution hold checkpoint (2026-11-09; superseded below)
 
 Public repository and Tailor scaffold are pushed through 002db3b. T1 is verified; T2/T3 are interrupted and need reconciliation; T4–T10 are pending. The independent monitor held the run on an actual Codex five-hour allowance warning (4% remaining, displayed reset 01:25 AM on 10 Nov). Both workers are idle and no active worker shell/test children were observed. Private prompts, native session IDs, ownership, verification evidence and handoff remain under `/var/home/adam/.local/state/agent-skills/runs/lightnvr-camera-card-20261109`. No partial implementation was committed. Dependency advisory remediation is queued and is not yet applied.
+
+## Current execution checkpoint (2026-11-10)
+
+Public main is pushed through 558f53b. T1–T3 are verified, including independent actual-server browser/proxy evidence. The approved Tailor preview is applied. Dependencies were updated and independently checked with 126 pre-adapter tests, typecheck/lint, temporary bundles, real proxy tests and zero npm audit findings.
+
+T4 WebRTC/audio and T5 MSE/HLS are running in their recorded native Herdr sessions. Coordinator independently passed the 45 initial MSE/HLS tests and Chromium generated-media smoke (decoded video/audio, local unmute and resource teardown); final adapter reviews remain open. No HA/Safari/Companion or physical-camera acceptance claim is made. T6–T10 remain pending.
+
+At the user's explicit request, private persistent quota recovery is enabled for this run. It obtains fresh local quota metadata after a monitor-generated hold, validates unchanged model/account/session identities, and sends the recorded coordinator at most one resume request per hold. The coordinator still reconciles partial edits and outstanding commands before activation. Operator holds are not automatically resumed. Unknown reset/status or changed identity requires inspection; the computer, Herdr and native sessions must remain running. Details, authorization and guard-test evidence remain in the private durable run directory.
