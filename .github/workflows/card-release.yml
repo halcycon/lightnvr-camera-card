@@ -1,0 +1,39 @@
+name: Card tagged release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  validate:
+    uses: ./.github/workflows/card-ci.yml
+  release:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Check tag matches the package version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node --input-type=module -e 'import fs from "node:fs"; const p=JSON.parse(fs.readFileSync("package.json")); if (process.env.RELEASE_TAG !== `v${p.version}`) throw Error("Tag/package version mismatch")'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: lightnvr-camera-card-release
+          path: ${{ runner.temp }}/lightnvr-package
+      - name: Verify and attach the tested bundle and notices
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/lightnvr-package"
+          test "$(find . -maxdepth 1 -type f | wc -l)" -eq 4
+          sha256sum --check SHA256SUMS
+          gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" --generate-notes lightnvr-camera-card.js LICENSE THIRD_PARTY_NOTICES.md SHA256SUMS

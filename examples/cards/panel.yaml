@@ -1,0 +1,12 @@
+# A dashboard view, not a card. Paste into the dashboard views list.
+title: Camera
+path: camera
+type: panel
+cards:
+  - type: custom:lightnvr-camera-card
+    server: /lightnvr/front/
+    stream: front_door
+    credential_storage: session
+    layout:
+      aspect_ratio: 1.7777777777777777
+      object_fit: contain

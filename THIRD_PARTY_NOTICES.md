@@ -2,7 +2,7 @@
 
 Project code is GPL-3.0-or-later. T1 contract/probe code was independently written from upstream protocol research; no lightNVR implementation code is copied. LICENSE contains the unmodified GNU GPL version 3 text from upstream. Protocol references are pinned in docs/upstream-contract.md. Later adaptations must retain upstream GPL notices.
 
-Runtime dependencies bundled in the eventual card are listed below with license notices. Development tools are lockfile dependencies, not shipped runtime code. @types/trusted-types is type-only and the SSR shim is normally excluded by browser resolution, but both are included here conservatively.
+Runtime dependencies bundled in the card are listed below with license notices. Development tools are lockfile dependencies, not shipped runtime code. @types/trusted-types is type-only and the SSR shim is normally excluded by browser resolution, but both are included here conservatively.
 
 ## lit 3.3.1 — BSD-3-Clause
 

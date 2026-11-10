@@ -1,0 +1,76 @@
+name: Card CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22.22.2
+          cache: npm
+      - name: Set temporary output and use the locked package manager
+        run: |
+          echo "LIGHTNVR_BUILD_DIR=$RUNNER_TEMP/lightnvr-card-build" >> "$GITHUB_ENV"
+          npm install --global npm@11.8.0
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:unit
+      - run: npm run build
+      - run: npm run check:release
+      - name: Validate card examples against the frozen schema
+        shell: bash
+        run: |
+          node --experimental-strip-types --input-type=module <<'JS'
+          import { readFile, readdir } from 'node:fs/promises';
+          import { parse } from 'yaml';
+          import { validateConfig } from './src/contracts/config.ts';
+          let count = 0;
+          function visit(value) {
+            if (!value || typeof value !== 'object') return;
+            if (value.type === 'custom:lightnvr-camera-card') { validateConfig(value); count++; }
+            for (const card of value.cards ?? []) visit(card);
+          }
+          for (const name of await readdir('examples/cards')) {
+            if (name.endsWith('.yaml')) visit(parse(await readFile(`examples/cards/${name}`, 'utf8')));
+          }
+          if (count !== 4) throw new Error(`Expected four example card instances, got ${count}`);
+          console.log(`PASS ${count} example cards`);
+          JS
+      - name: Stage release material in temporary storage
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/lightnvr-package"
+          cp "$LIGHTNVR_BUILD_DIR/lightnvr-camera-card.js" LICENSE THIRD_PARTY_NOTICES.md "$RUNNER_TEMP/lightnvr-package/"
+          cd "$RUNNER_TEMP/lightnvr-package"
+          sha256sum lightnvr-camera-card.js LICENSE THIRD_PARTY_NOTICES.md > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lightnvr-camera-card-release
+          path: ${{ runner.temp }}/lightnvr-package/
+          if-no-files-found: error
+          retention-days: 14
+  hacs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: HACS plugin validation (official hacs/action image)
+        uses: ./.github/actions/hacs
+        with:
+          category: plugin
+          comment: 'false'
+          github_token: ${{ secrets.GITHUB_TOKEN }}

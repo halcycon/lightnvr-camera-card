@@ -47,9 +47,11 @@ try {
  }
  if(!ready)throw new Error('Fixture did not start');
  phase='generated source registration';
- const r=await fetch(origin+'api/streams',{method:'POST',headers:{authorization,'Content-Type':'application/json'},body:JSON.stringify({name:'generated',url:'rtsp://127.0.0.1:8554/generated',go2rtc_source_override:'ffmpeg:virtual?video=testsrc#video=h264',record:false,enabled:true,streaming_enabled:true,backchannel_enabled:false}),signal:AbortSignal.timeout(20000)});
+ for (const source of ['generated', 'generated_lobby']) {
+ const r=await fetch(origin+'api/streams',{method:'POST',headers:{authorization,'Content-Type':'application/json'},body:JSON.stringify({name:source,url:'rtsp://127.0.0.1:8554/'+source,go2rtc_source_override:'ffmpeg:virtual?video=testsrc#video=h264',record:false,enabled:true,streaming_enabled:true,backchannel_enabled:false}),signal:AbortSignal.timeout(20000)});
  if(!r.ok)throw new Error('Generated source setup failed');
- await writeFile(dir+'/fixture.json',JSON.stringify({origin,username:'admin',password,source:'generated',container:name}),{mode:0o600});
+ }
+ await writeFile(dir+'/fixture.json',JSON.stringify({origin,username:'admin',password,source:'generated',second_source:'generated_lobby',container:name}),{mode:0o600});
  console.log(`Fixture ready. Descriptor (private): ${dir}/fixture.json`);
  console.log(`Run: LIGHTNVR_PROBE_FIXTURE=${dir}/fixture.json npm run test:probe`);
  console.log(`Cleanup: podman rm -f ${name} && podman network rm ${network}`);

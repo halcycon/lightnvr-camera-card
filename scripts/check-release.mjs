@@ -6,7 +6,11 @@ if (names.length !== 1 || names[0] !== 'lightnvr-camera-card.js') throw new Erro
 const code = await readFile(resolve(dir, names[0]), 'utf8');
 if (!code.includes('lightnvr-camera-card')) throw new Error('Missing card registration');
 if (/from\s*["']https?:|import\s*\(\s*["']https?:|sourceMappingURL/.test(code)) throw new Error('Remote import or source map in release');
-for (const file of ['LICENSE','THIRD_PARTY_NOTICES.md','hacs.json','README.md']) await readFile(file);
+for (const file of ['LICENSE','THIRD_PARTY_NOTICES.md']) {
+  const notice = await readFile(file, 'utf8');
+  if (!code.includes(notice)) throw new Error('Missing complete distribution notice: ' + file);
+}
+await readFile('README.md');
 const hacs = JSON.parse(await readFile('hacs.json','utf8'));
 if (hacs.filename !== 'lightnvr-camera-card.js') throw new Error('HACS bundle filename mismatch');
 console.log('PASS release file shape and required metadata (installation not verified)');

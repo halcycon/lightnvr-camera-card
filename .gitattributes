@@ -1,0 +1,2 @@
+# Bundle template literals contain significant trailing whitespace.
+dist/*.js linguist-generated=true -whitespace

@@ -1,0 +1,11 @@
+# Route this prefix on the active HA origin before use. Log in interactively.
+type: custom:lightnvr-camera-card
+server: /lightnvr/front/
+stream: front_door
+credential_storage: session
+audio:
+  muted: true
+  microphone: false
+playback_visibility:
+  hidden: pause
+  offscreen: pause

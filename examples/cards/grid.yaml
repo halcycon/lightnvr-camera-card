@@ -1,0 +1,13 @@
+# A native HA grid with independent players sharing only scoped authentication.
+type: grid
+columns: 2
+square: false
+cards:
+  - type: custom:lightnvr-camera-card
+    server: /lightnvr/front/
+    stream: front_door
+    credential_storage: session
+  - type: custom:lightnvr-camera-card
+    server: /lightnvr/front/
+    stream: garage
+    credential_storage: session
