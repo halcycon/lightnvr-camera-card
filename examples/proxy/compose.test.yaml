@@ -1,0 +1,26 @@
+# Linux-only isolated loopback recipe. Tests generate all configuration and certificates
+# in LIGHTNVR_PROXY_TEST_DIR; no production NVR, Docker socket, or credentials mounted.
+name: lightnvr-t3-test
+services:
+  router:
+    image: docker.io/library/node@sha256:cb15fca92530d7ac113467696cf1001208dac49c3c64355fd1348c11a88ddf8f # 22.22.2-alpine
+    user: "65534:65534"
+    command: [node, /t3/router.mjs]
+    environment:
+      LIGHTNVR_ROUTER_CONFIG: /t3/router.json
+    volumes:
+      - ${LIGHTNVR_PROXY_TEST_DIR:-/tmp/lightnvr-T3-compose}:/t3:ro,z
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  edge:
+    image: docker.io/library/traefik@sha256:e15b8921020b4fd81de5746b170dfceec221d2450711449f6427e4692881511a # v3.7.17
+    command: [--configFile=/t3/traefik.yaml]
+    volumes:
+      - ${LIGHTNVR_PROXY_TEST_DIR:-/tmp/lightnvr-T3-compose}:/t3:ro,z
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on: [router]

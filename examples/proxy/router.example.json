@@ -1,0 +1,10 @@
+{
+  "bind": "0.0.0.0",
+  "port": 8080,
+  "trustedPeers": ["172.31.253.2"],
+  "origins": ["https://ha.example.test"],
+  "scopes": [
+    {"prefix": "/lightnvr/front/", "cookieName": "lnvr_front_session", "upstream": "http://nvr-front:8080/"},
+    {"prefix": "/lightnvr/back/", "cookieName": "lnvr_back_session", "upstream": "http://nvr-back:8080/"}
+  ]
+}

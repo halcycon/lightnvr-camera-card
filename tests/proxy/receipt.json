@@ -1,0 +1,100 @@
+{
+  "status": "passed",
+  "traefik": "3.7.17",
+  "traefikImage": "docker.io/library/traefik@sha256:e15b8921020b4fd81de5746b170dfceec221d2450711449f6427e4692881511a",
+  "node": "v22.22.2",
+  "nodeImage": "docker.io/library/node@sha256:cb15fca92530d7ac113467696cf1001208dac49c3c64355fd1348c11a88ddf8f",
+  "tls": "Generated certificate verified using explicit CA and IP SAN; Chromium trusts only its SPKI pin",
+  "expiredMediaStatuses": [
+    401,
+    401,
+    401
+  ],
+  "immediateExpiredMediaStatuses": [
+    200,
+    200,
+    200
+  ],
+  "mediaAuthorizationWindowSeconds": 30,
+  "browser": "156.0.8078.73",
+  "upstream": "4e578c1dac4a21688b420c8fc852f741d62efd2e",
+  "checks": [
+    "Node image 22.22.2 runtime",
+    "Traefik 3.7.17 runtime",
+    "TLS certificate and IP SAN verified",
+    "login",
+    "prefixIsolationBeforeLogin",
+    "inventory",
+    "authenticatedWSS",
+    "SDP201",
+    "masterMediaInitSegment",
+    "scopedHLS",
+    "anonymousHLS401",
+    "credentialBoundHLS",
+    "nativePlaylist",
+    "nativeSegment",
+    "anonymousNative401",
+    "nativeNestedPathRejected",
+    "haCookieAbsent",
+    "revokedHLS401",
+    "logoutSucceeded",
+    "logoutScopeIsolation",
+    "Secure HttpOnly scoped cookie",
+    "actual expired session rejected",
+    "expired media/init/segment rejected after upstream 30-second window",
+    "anonymous WSS upgrade rejected",
+    "no NVR cookie for HA",
+    "hostile origin denied at actual edge",
+    "forwarded host spoof denied",
+    "raw go2rtc not routed"
+  ],
+  "nativeSegment": "passed: generated local TS through real upstream native handler",
+  "boundaries": [
+    "No real HA, Companion, Safari, physical camera or decoded playback acceptance",
+    "Expiry forced in isolated fixture DB; no wait for production timeout; native producer/decoded playback not claimed"
+  ],
+  "verifiedAt": "2026-11-10",
+  "fixtureSafety": "passed: nested/encoded paths, URI and Location confinement, malformed/foreign/compressed/oversized/partial playlists, scoped/duplicate cookies and headers, trusted peers, hostile/null origins, denied upgrades, oversized request rejection",
+  "validation": [
+    {
+      "command": "LIGHTNVR_PROBE_FIXTURE=<private isolated descriptor> LIGHTNVR_CHROMIUM=/usr/bin/chromium-browser LIGHTNVR_PROXY_REPORT=/tmp/lightnvr-T3-receipt.json npm run test:proxy -- --output=/tmp/lightnvr-T3-playwright --reporter=list",
+      "result": "passed",
+      "exitCode": 0,
+      "tests": 2,
+      "upstreamChecks": 28
+    },
+    {
+      "command": "node_modules/.bin/eslint tests/proxy examples/proxy/router.mjs",
+      "result": "passed",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "passed",
+      "exitCode": 0
+    },
+    {
+      "command": "docker compose -f examples/proxy/compose.test.yaml config",
+      "result": "unavailable on host",
+      "exitCode": 127,
+      "reason": "Docker CLI absent; Podman available"
+    },
+    {
+      "command": "podman run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges -v \"$PWD/examples/proxy:/work:ro,z\" -w /work --entrypoint docker docker.io/library/docker@sha256:b0d99f37f463c88cae2082083f705210296186c06632d22f6952ed43506ae520 compose -f compose.test.yaml config --quiet",
+      "result": "passed",
+      "exitCode": 0,
+      "composeVersion": "5.7.0"
+    },
+    {
+      "command": "podman run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges -e LIGHTNVR_ROUTER_CONFIG_FILE=/config/router.json -v \"$PWD/examples/proxy:/work:ro,z\" -w /work --entrypoint docker docker.io/library/docker@sha256:b0d99f37f463c88cae2082083f705210296186c06632d22f6952ed43506ae520 compose -f compose.yaml config --quiet",
+      "result": "passed",
+      "exitCode": 0
+    },
+    {
+      "command": "env -u LIGHTNVR_PROBE_FIXTURE npm run test:proxy -- --grep 'Traefik TLS' --output=/tmp/lightnvr-T3-no-fixture --reporter=list",
+      "result": "expected failure: INCOMPLETE without actual upstream fixture",
+      "exitCode": 1
+    }
+  ],
+  "cleanup": "No T3-labelled containers remain; test-owned native files and generated certificates removed. Assigned T1 fixture retained."
+}

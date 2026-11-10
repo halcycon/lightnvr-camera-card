@@ -1,0 +1,25 @@
+# Helper for an EXISTING HA-facing Traefik edge. See docs/connectivity.md.
+# Create/choose a dedicated external network and give that edge the trusted .2 address.
+name: lightnvr-routing
+services:
+  router:
+    image: docker.io/library/node@sha256:cb15fca92530d7ac113467696cf1001208dac49c3c64355fd1348c11a88ddf8f # 22.22.2-alpine
+    user: "65534:65534"
+    command: [node, /app/router.mjs]
+    environment:
+      LIGHTNVR_ROUTER_CONFIG: /config/router.json
+    volumes:
+      - ./router.mjs:/app/router.mjs:ro,z
+      - ${LIGHTNVR_ROUTER_CONFIG_FILE:?Use an absolute private router.json path}:/config/router.json:ro,z
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    networks:
+      lightnvr-edge:
+        ipv4_address: 172.31.253.3
+    # No host ports; edge alone can reach the helper over this dedicated network.
+networks:
+  lightnvr-edge:
+    external: true
+    name: lightnvr-edge

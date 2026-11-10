@@ -1,0 +1,21 @@
+# Merge this file-provider fragment into the proxy serving the HA origin.
+# Preserve existing HA routers. No StripPrefix middleware: router.mjs owns rewriting.
+http:
+  routers:
+    lightnvr:
+      rule: "Host(`ha.example.test`) && (PathPrefix(`/lightnvr/front/`) || PathPrefix(`/lightnvr/back/`))"
+      priority: 1000
+      entryPoints: [websecure]
+      service: lightnvr-router
+      tls: {}
+  services:
+    lightnvr-router:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://router:8080
+# Replace these with certificates trusted by every dashboard browser/device.
+tls:
+  certificates:
+    - certFile: /certs/ha.crt
+      keyFile: /certs/ha.key

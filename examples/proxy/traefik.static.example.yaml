@@ -1,0 +1,16 @@
+# MERGE into the existing HA edge; do not replace its HA routes/TLS resolver.
+# Tested edge image: docker.io/library/traefik@sha256:e15b8921020b4fd81de5746b170dfceec221d2450711449f6427e4692881511a (v3.7.17)
+entryPoints:
+  websecure:
+    address: ':443'
+    forwardedHeaders:
+      insecure: false
+      # No trustedIPs by default. If another edge is ahead of this one,
+      # configure ONLY its actual IPs after verifying the entire trust chain.
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+log:
+  level: ERROR
+# Access logging intentionally absent: query strings can include HLS lease IDs.
