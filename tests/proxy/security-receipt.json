@@ -1,0 +1,342 @@
+{
+  "status": "passed",
+  "verifiedAt": "2026-11-10T21:39:36.262538+00:00",
+  "developmentBaseline": "d8cbf2e",
+  "scope": "T3 request-authority and certificate-validation security follow-up; no scanner suppressions",
+  "changes": [
+    "Fixed configured protocol/hostname/port and separate raw request-target path for production HTTP/WS and proof HTTP/WS",
+    "Bare IPv6 hostname options, normal protocol/default-port handling; proof HTTP roots restricted to 127.0.0.1 or ::1",
+    "Explicit configured DNS servername for upstream HTTPS; explicit empty SNI for IP upstreams with normal certificate verification",
+    "Generated CA passed on every HTTPS harness request, including readiness and denial checks; no rejectUnauthorized:false"
+  ],
+  "authorityRegression": {
+    "result": "passed",
+    "helpers": [
+      "production",
+      "proof"
+    ],
+    "cases": [
+      "network-path authority",
+      "triple slash",
+      "backslash authority",
+      "encoded slashes",
+      "double-encoded slashes",
+      "encoded backslashes",
+      "embedded HTTP URL",
+      "embedded HTTPS URL",
+      "userinfo authority",
+      "encoded traversal to authority",
+      "absolute-form target"
+    ],
+    "protocols": [
+      "HTTP",
+      "WS"
+    ],
+    "attempts": 44,
+    "trap": {
+      "httpRequests": 0,
+      "wsUpgrades": 0,
+      "tcpConnections": 0
+    },
+    "positiveControls": "Exact encoded paths/query bytes and public Host/Origin preserved"
+  },
+  "ipv6Loopback": {
+    "result": "passed",
+    "helpers": 2,
+    "httpRequests": 2,
+    "wsRequests": 2
+  },
+  "upstreamTLS": {
+    "result": "passed",
+    "authorities": [
+      "DNS localhost",
+      "IPv4 loopback",
+      "IPv6 loopback"
+    ],
+    "httpAndWsRequests": 6,
+    "forwardedHost": "ha.example.test",
+    "dnsSNI": "localhost",
+    "ipSNI": "absent",
+    "certificateVerification": "Configured DNS/IP identity with generated CA using existing NODE_EXTRA_CA_CERTS; no new proxy CA feature",
+    "negativeChecks": [
+      "unrelated owned certificate issuer rejected using actual fixture CA",
+      "wrong hostname rejected with trusted generated edge CA"
+    ]
+  },
+  "fixtureIsolation": {
+    "projectFixtureLabel": "T1",
+    "loopbackOnly": true,
+    "internalNetwork": true,
+    "generatedMediaOnly": true,
+    "retainedForCoordinatorCleanup": true
+  },
+  "realProbe": {
+    "research": "8983888a19fef2040c48eee0a4ce56db5dafeb85",
+    "tested": "4e578c1dac4a21688b420c8fc852f741d62efd2e",
+    "imageDigest": "sha256:3d28fc1a9ef395dfc5a7bf7e8013964f1c330ff10b6501240726dfc3f039c56b",
+    "browser": "156.0.8078.73",
+    "checks": [
+      {
+        "name": "directOriginCookieLogin",
+        "passed": true
+      },
+      {
+        "name": "directCredentialCorsRejected",
+        "passed": true
+      },
+      {
+        "name": "directBasicPreflightRejected",
+        "passed": true
+      },
+      {
+        "name": "sameOriginBasicFetch",
+        "passed": true
+      },
+      {
+        "name": "cookieLogin",
+        "passed": true
+      },
+      {
+        "name": "httpOnly",
+        "passed": true
+      },
+      {
+        "name": "inventory",
+        "passed": true
+      },
+      {
+        "name": "directWsRejected",
+        "passed": true
+      },
+      {
+        "name": "proxyWsOpened",
+        "passed": true
+      },
+      {
+        "name": "wsHandshakeStatuses",
+        "passed": true
+      },
+      {
+        "name": "sdpAnswer",
+        "passed": true
+      },
+      {
+        "name": "hlsScopedChild",
+        "passed": true
+      },
+      {
+        "name": "anonymousHlsChildDenied",
+        "passed": true
+      },
+      {
+        "name": "hlsInit",
+        "passed": true
+      },
+      {
+        "name": "hlsSegment",
+        "passed": true
+      },
+      {
+        "name": "nativePlaylist",
+        "passed": true
+      },
+      {
+        "name": "cookieScope",
+        "passed": true
+      },
+      {
+        "name": "cookieAbsentFromHa",
+        "passed": true
+      },
+      {
+        "name": "hostileOrigin",
+        "passed": true,
+        "status": 403
+      }
+    ],
+    "status": "passed",
+    "endpoints": [
+      {
+        "label": "proxy-basic-inventory",
+        "status": 200,
+        "contentType": "application/json"
+      },
+      {
+        "label": "proxy-login",
+        "status": 200,
+        "contentType": "application/json"
+      },
+      {
+        "label": "proxy-inventory",
+        "status": 200,
+        "contentType": "application/json"
+      },
+      {
+        "label": "proxy-sdp",
+        "status": 201,
+        "contentType": "application/sdp"
+      },
+      {
+        "label": "proxy-hls-master",
+        "status": 200,
+        "contentType": "application/vnd.apple.mpegurl"
+      },
+      {
+        "label": "proxy-hls-child",
+        "status": 200,
+        "contentType": "application/vnd.apple.mpegurl"
+      },
+      {
+        "label": "anonymous-hls-child",
+        "status": 401,
+        "contentType": "application/json"
+      },
+      {
+        "label": "proxy-hls-init",
+        "status": 200,
+        "contentType": "video/mp4"
+      },
+      {
+        "label": "proxy-hls-segment",
+        "status": 200,
+        "contentType": "video/iso.segment"
+      },
+      {
+        "label": "proxy-native-hls",
+        "status": 200,
+        "contentType": "application/vnd.apple.mpegurl"
+      }
+    ],
+    "preflights": [
+      {
+        "method": "OPTIONS",
+        "endpoint": "/api/auth/login",
+        "status": 404,
+        "contentType": "application/json"
+      },
+      {
+        "method": "OPTIONS",
+        "endpoint": "/api/streams",
+        "status": 404,
+        "contentType": "application/json"
+      }
+    ],
+    "wsHandshakes": [
+      {
+        "status": 403,
+        "contentType": null,
+        "via": "browser-console-status-only"
+      },
+      {
+        "status": 403,
+        "contentType": null
+      },
+      {
+        "status": 101,
+        "contentType": null
+      }
+    ],
+    "directBasicFetch": "blocked"
+  },
+  "realProxy": {
+    "status": "passed",
+    "traefik": "3.7.17",
+    "traefikImage": "docker.io/library/traefik@sha256:e15b8921020b4fd81de5746b170dfceec221d2450711449f6427e4692881511a",
+    "node": "v22.22.2",
+    "nodeImage": "docker.io/library/node@sha256:cb15fca92530d7ac113467696cf1001208dac49c3c64355fd1348c11a88ddf8f",
+    "tls": "Every Node HTTPS request verifies generated CA and IP SAN, including readiness and rejection tests; wrong hostname rejected; Chromium trusts only the certificate SPKI pin",
+    "expiredMediaStatuses": [
+      401,
+      401,
+      401
+    ],
+    "immediateExpiredMediaStatuses": [
+      200,
+      200,
+      200
+    ],
+    "mediaAuthorizationWindowSeconds": 30,
+    "browser": "156.0.8078.73",
+    "upstream": "4e578c1dac4a21688b420c8fc852f741d62efd2e",
+    "checks": [
+      "Node image 22.22.2 runtime",
+      "Traefik 3.7.17 runtime",
+      "wrong TLS hostname rejected with trusted CA",
+      "TLS certificate and IP SAN verified",
+      "login",
+      "prefixIsolationBeforeLogin",
+      "inventory",
+      "authenticatedWSS",
+      "SDP201",
+      "masterMediaInitSegment",
+      "scopedHLS",
+      "anonymousHLS401",
+      "credentialBoundHLS",
+      "nativePlaylist",
+      "nativeSegment",
+      "anonymousNative401",
+      "nativeNestedPathRejected",
+      "haCookieAbsent",
+      "revokedHLS401",
+      "logoutSucceeded",
+      "logoutScopeIsolation",
+      "Secure HttpOnly scoped cookie",
+      "actual expired session rejected",
+      "expired media/init/segment rejected after upstream 30-second window",
+      "anonymous WSS upgrade rejected",
+      "no NVR cookie for HA",
+      "hostile origin denied at actual edge",
+      "forwarded host spoof denied",
+      "raw go2rtc not routed"
+    ],
+    "nativeSegment": "passed: generated local TS through real upstream native handler",
+    "boundaries": [
+      "No real HA, Companion, Safari, physical camera or decoded playback acceptance",
+      "Expiry forced in isolated fixture DB; no wait for production timeout; native producer/decoded playback not claimed"
+    ]
+  },
+  "validation": [
+    {
+      "command": "node tests/probes/setup-fixture.mjs",
+      "result": "passed",
+      "exitCode": 0,
+      "note": "New independent generated fixture; private descriptor reported only to coordinator"
+    },
+    {
+      "command": "LIGHTNVR_PROBE_FIXTURE=<new private descriptor> LIGHTNVR_CHROMIUM=/usr/bin/chromium-browser LIGHTNVR_PROBE_REPORT=/tmp/lightnvr-T3-security-probe.json npm run test:probe",
+      "result": "passed",
+      "exitCode": 0,
+      "checks": 19
+    },
+    {
+      "command": "LIGHTNVR_PROBE_FIXTURE=<same new private descriptor> LIGHTNVR_CHROMIUM=/usr/bin/chromium-browser LIGHTNVR_PROXY_REPORT=/tmp/lightnvr-T3-security-proxy.json npm run test:proxy -- --output=/tmp/lightnvr-T3-security-playwright --reporter=list",
+      "result": "passed",
+      "exitCode": 0,
+      "tests": 5,
+      "note": "Executed after real test:probe completed"
+    },
+    {
+      "command": "node_modules/.bin/eslint examples/proxy/router.mjs tests/probes/proxy.mjs tests/proxy",
+      "result": "passed",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "passed",
+      "exitCode": 0
+    }
+  ],
+  "cleanup": "T3 containers, owned TLS helper child processes, generated TLS certificate/key files, and test-owned native media removed. Fresh NVR fixture and internal network retained for coordinator cleanup.",
+  "supportLimits": [
+    "CodeQL CI rerun pending; no alert resolution or dismissal claimed",
+    "30-second upstream media authorization cache preserved; immediate expired media 200, post-window 401",
+    "Real HA/Companion/Safari/physical talk/decoded playback and deployed NVR HTTPS not established by this follow-up",
+    "No card matrix/build, dependency install, bundle, schema, manifest, Git/index or deployment changes"
+  ],
+  "coordinatorVerification": {
+    "verifiedAt": "2026-11-10T21:41:26.362742+00:00",
+    "independentSecurityRegressions": 3,
+    "result": "passed",
+    "fixtureContainerAndNetworkRemoved": true
+  }
+}

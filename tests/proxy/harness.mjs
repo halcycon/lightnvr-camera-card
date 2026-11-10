@@ -18,10 +18,11 @@ async function listen(server) {
   return `http://127.0.0.1:${server.address().port}`;
 }
 async function close(server) { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
-function request(origin, path, headers = {}) {
+function request(origin, path, headers = {}, ca) {
   return new Promise((resolve, reject) => {
     const target = new URL(origin);
-    const req = (target.protocol === 'https:' ? https : http).request({ hostname: target.hostname, port: target.port, path, headers, rejectUnauthorized: false }, res => {
+    if (target.protocol === 'https:' && !ca) { reject(Error('Explicit generated fixture CA required for HTTPS')); return; }
+    const req = (target.protocol === 'https:' ? https : http).request({ hostname: target.hostname, port: target.port, path, headers, ...(target.protocol === 'https:' ? {ca} : {}) }, res => {
       const chunks = []; res.on('data', b => chunks.push(b));
       res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks).toString() }));
     });
@@ -154,7 +155,7 @@ export async function upstreamSmoke() {
     const certificate = await readFile(dir + '/ha.crt');
     const spki = createHash('sha256').update(new X509Certificate(certificate).publicKey.export({type:'spki',format:'der'})).digest('base64');
     const template = await readFile(new URL('../../examples/proxy/traefik.dynamic.yaml', import.meta.url), 'utf8');
-    const dynamic = template.replaceAll('ha.example.test', '127.0.0.1').replace('http://router:8080', helperOrigin).replaceAll('/certs/', '/t3/');
+    const dynamic = template.replaceAll('ha.example.test', '127.0.0.1').replace('http://router:8080', helperOrigin).replaceAll('/certs/', '/t3/').replace('tls:\n  certificates:', 'tls:\n  stores:\n    default:\n      defaultCertificate:\n        certFile: /t3/ha.crt\n        keyFile: /t3/ha.key\n  certificates:');
     await writeFile(dir + '/nvr.yaml', dynamic);
     await writeFile(dir + '/ha.yaml', `http:\n  routers:\n    ha:\n      rule: "Host(\`127.0.0.1\`)"\n      priority: 1\n      entryPoints: [websecure]\n      service: ha\n      tls: {}\n  services:\n    ha:\n      loadBalancer:\n        servers:\n          - url: ${haOrigin}\n`);
     await writeFile(dir + '/router.json', JSON.stringify({ bind: '127.0.0.1', port: Number(new URL(helperOrigin).port), origins: [publicOrigin], trustedPeers: ['127.0.0.1'], scopes }));
@@ -166,8 +167,13 @@ export async function upstreamSmoke() {
     run('run', '-d', '--name', name + '-router', '--user', '65534:65534', '--label', 'io.lightnvr-card.fixture=T3', '--network', 'host', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '-v', `${dir}:/t3:ro,z`, '-e', 'LIGHTNVR_ROUTER_CONFIG=/t3/router.json', nodeImage, 'node', '/t3/router.mjs'); startedRouter = true;
     check('Node image 22.22.2 runtime', run('exec', name + '-router', 'node', '--version') === 'v22.22.2');
     run('run', '-d', '--name', name, '--label', 'io.lightnvr-card.fixture=T3', '--network', 'host', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '-v', `${dir}:/t3:ro,z`, traefikImage, '--configFile=/t3/traefik.yaml'); started = true;
-    for (let i = 0; i < 50; i++) { try { if ((await request(publicOrigin, '/')).status === 200) break; } catch { /* startup */ } await new Promise(resolve => setTimeout(resolve, 100)); }
+    for (let i = 0; i < 50; i++) { try { if ((await request(publicOrigin, '/', {}, certificate)).status === 200) break; } catch { /* startup */ } await new Promise(resolve => setTimeout(resolve, 100)); }
     const version = run('exec', name, 'traefik', 'version'); check('Traefik 3.7.17 runtime', /Version:\s+3\.7\.17/.test(version));
+    await assert.rejects(new Promise((resolve, reject) => {
+      const req = https.get(publicOrigin, {ca: certificate, servername: 'wrong.fixture.invalid'}, res => { res.resume(); resolve(); });
+      req.setTimeout(10000, () => req.destroy(Error('Isolated TLS hostname timeout'))); req.on('error', reject);
+    }), {code: 'ERR_TLS_CERT_ALTNAME_INVALID'});
+    check('wrong TLS hostname rejected with trusted CA', true);
     const trustedTLS = await new Promise((resolve, reject) => { const req = https.get(publicOrigin, {ca: certificate, rejectUnauthorized: true}, res => { res.resume(); res.on('end', () => resolve(res.statusCode)); }); req.on('error', reject); });
     check('TLS certificate and IP SAN verified', trustedTLS === 200);
     browser = await chromium.launch({ headless: true, args: ['--ignore-certificate-errors-spki-list=' + spki], executablePath: process.env.LIGHTNVR_CHROMIUM ?? '/usr/bin/chromium-browser' });
@@ -231,13 +237,13 @@ export async function upstreamSmoke() {
     const expiredMedia = await page.evaluate(async paths => Promise.all(paths.map(async path => (await fetch(path)).status)), expiryPaths);
     await writeFile(dir + '/expiry-observations.json', JSON.stringify(expiredMedia));
     check('expired media/init/segment rejected after upstream 30-second window', expiredMedia.every(status => status === 401 || status === 403));
-    const wsDenied = await request(publicOrigin, '/lightnvr/back/go2rtc/api/ws?src=generated', { Origin: publicOrigin, Connection: 'Upgrade', Upgrade: 'websocket', 'Sec-WebSocket-Version': '13', 'Sec-WebSocket-Key': randomBytes(16).toString('base64') });
+    const wsDenied = await request(publicOrigin, '/lightnvr/back/go2rtc/api/ws?src=generated', { Origin: publicOrigin, Connection: 'Upgrade', Upgrade: 'websocket', 'Sec-WebSocket-Version': '13', 'Sec-WebSocket-Key': randomBytes(16).toString('base64') }, certificate);
     check('anonymous WSS upgrade rejected', wsDenied.status === 401);
     check('no NVR cookie for HA', !(await context.cookies(publicOrigin + '/')).some(c => c.name.startsWith('lnvr_')));
-    check('hostile origin denied at actual edge', (await request(publicOrigin, '/lightnvr/back/api/auth/verify', { Origin: 'https://hostile.invalid' })).status === 403);
-    check('forwarded host spoof denied', (await request(publicOrigin, '/lightnvr/back/api/auth/verify', { 'X-Forwarded-Host': 'hostile.invalid', 'X-Forwarded-Proto': 'http' })).status === 401);
-    check('raw go2rtc not routed', (await request(publicOrigin, '/lightnvr/front/go2rtc/api/streams')).status === 404);
-    const report = { status: 'passed', traefik: '3.7.17', traefikImage, node: process.version, nodeImage, tls: 'Generated certificate verified using explicit CA and IP SAN; Chromium trusts only its SPKI pin', expiredMediaStatuses: expiredMedia, immediateExpiredMediaStatuses: immediateExpiredMedia, mediaAuthorizationWindowSeconds: 30, browser: browser.version(), upstream: sourceRevision, checks, nativeSegment: 'passed: generated local TS through real upstream native handler', boundaries: ['No real HA, Companion, Safari, physical camera or decoded playback acceptance', 'Expiry forced in isolated fixture DB; no wait for production timeout; native producer/decoded playback not claimed'] };
+    check('hostile origin denied at actual edge', (await request(publicOrigin, '/lightnvr/back/api/auth/verify', { Origin: 'https://hostile.invalid' }, certificate)).status === 403);
+    check('forwarded host spoof denied', (await request(publicOrigin, '/lightnvr/back/api/auth/verify', { 'X-Forwarded-Host': 'hostile.invalid', 'X-Forwarded-Proto': 'http' }, certificate)).status === 401);
+    check('raw go2rtc not routed', (await request(publicOrigin, '/lightnvr/front/go2rtc/api/streams', {}, certificate)).status === 404);
+    const report = { status: 'passed', traefik: '3.7.17', traefikImage, node: process.version, nodeImage, tls: 'Every Node HTTPS request verifies generated CA and IP SAN, including readiness and rejection tests; wrong hostname rejected; Chromium trusts only the certificate SPKI pin', expiredMediaStatuses: expiredMedia, immediateExpiredMediaStatuses: immediateExpiredMedia, mediaAuthorizationWindowSeconds: 30, browser: browser.version(), upstream: sourceRevision, checks, nativeSegment: 'passed: generated local TS through real upstream native handler', boundaries: ['No real HA, Companion, Safari, physical camera or decoded playback acceptance', 'Expiry forced in isolated fixture DB; no wait for production timeout; native producer/decoded playback not claimed'] };
     await writeFile(dir + '/receipt.json', JSON.stringify(report, null, 2));
     if (process.env.LIGHTNVR_PROXY_REPORT) await writeFile(process.env.LIGHTNVR_PROXY_REPORT, JSON.stringify(report, null, 2));
     console.log(JSON.stringify(report));

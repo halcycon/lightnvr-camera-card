@@ -1,18 +1,33 @@
 // Proof helper, not a deployment proxy. Upstream is always isolated loopback lightNVR.
 import http from 'node:http';
 import { pipeline } from 'node:stream';
+function safeTargetPath(path) {
+  const pathname = path.split('?')[0];
+  try {
+    const decoded = decodeURIComponent(pathname);
+    return pathname.startsWith('/') && !pathname.startsWith('//') && !/%2f/i.test(pathname) &&
+      !decoded.includes('\\') && !decoded.includes('%') && !decoded.includes('//') &&
+      !decoded.split('/').some(part => part === '.' || part === '..') &&
+      ![...decoded].some(char => char.charCodeAt(0) <= 32 || char.charCodeAt(0) === 127);
+  } catch { return false; }
+}
 export async function startProxy(upstream) {
   const target = new URL(upstream);
+  if (target.protocol !== 'http:' || !['127.0.0.1', '[::1]'].includes(target.hostname) ||
+      target.username || target.password || target.pathname !== '/' || target.search || target.hash) {
+    throw Error('Only generated loopback HTTP fixture roots are allowed');
+  }
   const scopes = ['/lightnvr/front/', '/lightnvr/back/'];
   const server = http.createServer((req, res) => {
     const prefix = scopes.find(p => req.url.startsWith(p));
     if (!prefix) { res.writeHead(200, {'Content-Type':'text/html'}); res.end('<!doctype html><title>Isolated HA origin fixture</title>'); return; }
     if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`) { res.writeHead(403); res.end(); return; }
     const path = '/' + req.url.slice(prefix.length);
+    if (!safeTargetPath(path)) { res.writeHead(400, {Connection:'close'}); res.end(); return; }
     const headers = { ...req.headers, 'accept-encoding':'identity' };
     // Only the chosen NVR session; no HA cookies or shared administrator credentials.
     headers.cookie = (req.headers.cookie ?? '').split(';').map(v=>v.trim()).filter(v=>v.startsWith('session=')).join('; ');
-    const upstreamReq = http.request(new URL(path, target), { method:req.method, headers }, response => {
+    const upstreamReq = http.request({ protocol:target.protocol, hostname:target.hostname.replace(/^\[|\]$/g,''), port:target.port, path, method:req.method, headers }, response => {
       const h = {...response.headers};
       if (h['set-cookie']) h['set-cookie'] = h['set-cookie'].map(c=>c.replace(/;\s*Domain=[^;]+/ig,'').replace(/;\s*Path=[^;]+/i,`; Path=${prefix}`));
       if (h.location?.startsWith('/')) h.location = prefix + h.location.slice(1);
@@ -41,7 +56,9 @@ export async function startProxy(upstream) {
     const prefix=scopes.find(p=>req.url.startsWith(p));
     if (!prefix || req.headers.origin !== `http://${req.headers.host}`) { socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'); return; }
     const headers={...req.headers,cookie:(req.headers.cookie??'').split(';').map(v=>v.trim()).filter(v=>v.startsWith('session=')).join('; ')};
-    const remote=http.request(new URL('/'+req.url.slice(prefix.length),target),{headers});
+    const path='/'+req.url.slice(prefix.length);
+    if (!safeTargetPath(path)) { socket.end('HTTP/1.1 400 Rejected\r\nConnection: close\r\n\r\n'); return; }
+    const remote=http.request({protocol:target.protocol,hostname:target.hostname.replace(/^\[|\]$/g,''),port:target.port,path,headers});
     remote.on('upgrade',(response,peer,remoteHead)=>{
       socket.write('HTTP/1.1 101 Switching Protocols\r\n'+Object.entries(response.headers).map(([k,v])=>`${k}: ${v}`).join('\r\n')+'\r\n\r\n');
       if(remoteHead.length)socket.write(remoteHead);if(head.length)peer.write(head);

@@ -1,6 +1,7 @@
 // Independently written routing helper. No media server or stored credentials.
 import http from 'node:http';
 import https from 'node:https';
+import { isIP } from 'node:net';
 import { pipeline } from 'node:stream';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -129,8 +130,11 @@ export function createRouter(config) {
     try { route = authorize(req, false); } catch (code) { fail(res, typeof code === 'number' ? code : 400); return; }
     const { scope, path, headers } = route;
     if (Number(req.headers['content-length'] ?? 0) > MAX_REQUEST) { fail(res, 413); return; }
+    // Destination authority comes only from configuration; the raw request target is a separate option.
     const target = new URL(scope.upstream);
-    const request = (target.protocol === 'https:' ? https : http).request(new URL(path, target), { method: req.method, headers }, response => {
+    const hostname = target.hostname.replace(/^\[|\]$/g, '');
+    const tlsIdentity = target.protocol === 'https:' ? { servername: isIP(hostname) ? '' : hostname } : {};
+    const request = (target.protocol === 'https:' ? https : http).request({ protocol: target.protocol, hostname, port: target.port, ...tlsIdentity, path, method: req.method, headers }, response => {
       let outgoing;
       try { outgoing = responseHeaders(response, scope, path); } catch { response.destroy(); fail(res, 502); return; }
       const playlist = /(?:mpegurl|vnd\.apple\.mpegurl)/i.test(String(outgoing['content-type'])) || /\.m3u8(?:\?|$)/.test(path) && response.statusCode === 200;
@@ -166,8 +170,11 @@ export function createRouter(config) {
     let route;
     try { route = authorize(req, true); } catch (code) { socket.end(`HTTP/1.1 ${typeof code === 'number' ? code : 400} Rejected\r\nConnection: close\r\n\r\n`); return; }
     const { scope, path, headers } = route;
+    // Never resolve a client path as a URL: even authority-like paths cannot replace this destination.
     const target = new URL(scope.upstream);
-    const remote = (target.protocol === 'https:' ? https : http).request(new URL(path, target), { headers });
+    const hostname = target.hostname.replace(/^\[|\]$/g, '');
+    const tlsIdentity = target.protocol === 'https:' ? { servername: isIP(hostname) ? '' : hostname } : {};
+    const remote = (target.protocol === 'https:' ? https : http).request({ protocol: target.protocol, hostname, port: target.port, ...tlsIdentity, path, headers });
     const timeout = setTimeout(() => remote.destroy(), 30000);
     const finish = () => clearTimeout(timeout);
     socket.on('error', () => remote.destroy());
