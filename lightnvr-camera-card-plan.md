@@ -153,9 +153,9 @@ Every task starts Pending. The coordinator alone maintains status/log/file recor
 - **description**: Implement normalized base/prefix URLs; session and tested Basic-fetch modes; redaction; single-flight bounded authentication; optional interactive MFA; capability and paginated authorized inventory; explicit manual source mapping; typed control APIs for T7. Support response cancellation and sanitized errors, including non-JSON go2rtc failures. Cache discovery/config per credential scope with refcounts and bounded lifetime; share no camera player/peer connection or microphone.
 - **acceptance**: Connect → discover → select is possible with viewer privileges; >100 streams work; empty authorized inventory differs from auth failure; literal `front_door_sub` and derived sub profile remain distinct; passwords with reserved/non-ASCII characters survive supported encoding. Same cookie scope cannot switch identities silently; 401 reauth is bounded, 403 is terminal, offline remains recoverable. Permission unknown is represented honestly.
 - **validation**: `npm run test:unit -- tests/unit/api`; `npm run typecheck`. Evidence includes multi-page discovery, stale request cancellation, changed credentials, root/subpath joining, challenge/locked account/rate limit, 401/403/HTML/502, source mapping and credential-redaction tests.
-- **status**: Pending
-- **log**:
-- **files edited/created**:
+- **status**: Verified
+- **log**: 2026-11-10: coordinator verified 103 API tests, typecheck and focused lint; API temporary build passed. Read src/api/README.md for explicit MFA/Basic/native-profile limits. 2026-11-10: native /status confirmed 98% allowance, original session identity verified, partial changes reconciled and same worker resumed with remaining-work prompt. Interrupted by durable monitor at <5% five-hour quota; native worker inspected idle, partial files preserved, no acceptance verification. Native full-access Herdr worker registered and dispatched after T1 was verified; reads frozen contracts and real upstream receipt.
+- **files edited/created**: src/api/{client,index,mapping,safety}.ts, src/api/README.md; tests/unit/api/{client,paths-controls}.test.ts.
 
 ### T3: Package and verify proxy connectivity recipes
 - **depends_on**: [T1]
@@ -164,8 +164,8 @@ Every task starts Pending. The coordinator alone maintains status/log/file recor
 - **description**: Produce tested Traefik-fronted same-origin routing examples to the existing NVR, with a narrowly scoped routing helper only if necessary. Cover prefix routing, public Host/Origin, trusted TLS forwarding, session cookie isolation, HLS URI/Location rewriting, upgrades, and all selected transport endpoints. Document direct mode's observed support and failures, and behavior under internal/external/Companion HA URLs.
 - **acceptance**: Browser can log in, discover, open authenticated WS, obtain SDP, and request master/media playlists/init/segments under its NVR prefix. Two NVR prefixes do not share cookies. Requests to HA routes do not carry NVR cookies; unauthorized media and hostile origins remain rejected. No public raw go2rtc access or administrator injection. Exact supported proxy versions recorded. If existing HA origin cannot be routed, state the deployment prerequisite rather than claiming the NVR-side TLS sidecar is sufficient.
 - **validation**: `npm run test:proxy`; `docker compose -f examples/proxy/compose.test.yaml config`. Isolated fixtures and actual upstream smoke check cover nested paths, encoded stream names, native HLS and go2rtc HLS, TLS and WS upgrade, cookie collisions, denied origins, and session expiry. T3 owns its Docker project and ports; never modify the user's running sidecar.
-- **status**: Pending
-- **log**:
+- **status**: Running (reconciled after reset)
+- **log**: 2026-11-10: native /status confirmed 98% allowance, original session identity verified, partial changes reconciled and same worker resumed with remaining-work prompt. Interrupted by durable monitor at <5% five-hour quota; native worker inspected idle, partial files preserved, no acceptance verification. Native full-access Herdr worker registered and dispatched after T1 was verified; reads frozen contracts and real upstream receipt.
 - **files edited/created**:
 
 ### T4: WebRTC adapter and microphone/talk lifecycle
@@ -313,3 +313,7 @@ Execution is a separate request. Concrete entry point:
 `Use $parallel-task-herdr to execute lightnvr-camera-card-plan.md, starting with T1 and its connectivity proof, in /var/mnt/Games/workspace/lightNVR-client.`
 
 If Herdr, durable journal permissions, writable project/Git access or the required test fixture are unavailable, report the specific execution prerequisite before dispatching dependent workers. The plan remains usable for sequential execution when explicitly requested; no unverified Herdr control is attempted.
+
+## Execution hold checkpoint (2026-11-09)
+
+Public repository and Tailor scaffold are pushed through 002db3b. T1 is verified; T2/T3 are interrupted and need reconciliation; T4–T10 are pending. The independent monitor held the run on an actual Codex five-hour allowance warning (4% remaining, displayed reset 01:25 AM on 10 Nov). Both workers are idle and no active worker shell/test children were observed. Private prompts, native session IDs, ownership, verification evidence and handoff remain under `/var/home/adam/.local/state/agent-skills/runs/lightnvr-camera-card-20261109`. No partial implementation was committed. Dependency advisory remediation is queued and is not yet applied.
