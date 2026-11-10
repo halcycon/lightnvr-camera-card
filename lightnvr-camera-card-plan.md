@@ -175,9 +175,9 @@ Every task starts Pending. The coordinator alone maintains status/log/file recor
 - **description**: Implement HTTP SDP signaling, bounded complete ICE gathering, server ICE settings with optional override, supported codec preferences and no invented HTTP candidate API. Negotiate the audio sender when talk is enabled/authorized; capture on gesture and attach/detach safely. Handle restart/cancellation, first decoded frame, ICE grace, permission/secure-context failure, remote track end and stats.
 - **acceptance**: Video and listen work independently; PTT and toggle send only while requested. Stop/release before permission resolves never sends later; reconnect cannot attach to an old or replacement peer accidentally; failure/unmount stops every local track and meter. No automatic microphone restart. TLS error includes HA document origin and NVR signaling context. Audio disabled overrides card config.
 - **validation**: `npm run test:unit -- tests/unit/webrtc tests/unit/audio`; `npm run typecheck`. Include delayed and denied permission, sender attach rejection, rapid press/release, overlapping starts, release during attach, stale sender, missing microphone, no secure context, no-video despite ICE success, timeout and aborted SDP-body cases. Real decoded media and camera talk are verified separately in T10.
-- **status**: Running
-- **log**: 2026-11-10: verified native full-access Herdr worker registered and dispatched after T2/T3 verification and dependency audit remediation; current contracts include autoplay suspension and observable talk state.
-- **files edited/created**:
+- **status**: Verified
+- **log**: 2026-11-10: coordinator independently passed final 75 focused tests, typecheck and scoped lint; worker temporary WebRTC/audio builds passed. Reviewed late permission/SDP cancellation, ICE sender renewal, independent speaker mute and meter cleanup. Real WebRTC decode/physical talk remain T10. 2026-11-10: verified native full-access Herdr worker registered and dispatched after T2/T3 verification and dependency audit remediation; current contracts include autoplay suspension and observable talk state.
+- **files edited/created**: src/transports/webrtc/, src/audio/, tests/unit/webrtc/, tests/unit/audio/.
 
 ### T5: MSE and HLS adapters
 - **depends_on**: [T2, T3]
@@ -219,8 +219,8 @@ Every task starts Pending. The coordinator alone maintains status/log/file recor
 - **description**: Implement `getConfigElement` editor element and stub/default config helpers, with connect → test → discover → select flow, main/sub preview choices, settings for transports/timeouts/retry/HLS/audio/talk/controls/layout and multi-selection YAML generation. Preserve unedited advanced options and emit complete `config-changed` events. Import the old server/url/mode/media/ui shape through explicit migration preview; never register the existing card's tag.
 - **acceptance**: Single camera can be selected and saved without YAML; multi-selection produces valid separate-card or native-grid YAML; connection errors and unavailable capabilities are actionable. Passwords are masked, imported userinfo is removed, and previews never acquire microphones or issue control mutations. Async discovery cannot overwrite later edits. Unknown advanced fields survive round trip or are explicitly rejected with a useful message.
 - **validation**: `npm run test:unit -- tests/unit/editor`; `npm run typecheck`. Cover >100 cameras, empty inventory, disabled/privacy streams, cancellation, bad credentials, migration of exact `front_door_sub`, secret redaction, full config event, forced transport/fallback validation and generated grid parsing. T7 wires the lazy editor import to the helpers after this task is verified.
-- **status**: Pending
-- **log**:
+- **status**: Running
+- **log**: 2026-11-10: native full-access Herdr editor worker dispatched in free slot after T5 verification; T2 API is verified; exports and secret-safe session behavior specified in durable prompt.
 - **files edited/created**:
 
 ### T9: HACS packaging, user documentation and release preparation
