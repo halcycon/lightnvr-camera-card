@@ -25,7 +25,7 @@ export interface ClientConfig {
   transports: Readonly<Record<Transport, Knowledge>>; defaultTransport?: Transport;
   connectionTimeoutMs?: number; iceRecoveryMs?: number;
 }
-export type FailureCode = 'auth' | 'policy' | 'privacy' | 'source-offline' | 'unsupported-codec' | 'unsupported-api' | 'network' | 'ice' | 'timeout' | 'buffer' | 'cancelled' | 'configuration' | 'proxy' | 'rate-limit' | 'password-change' | 'totp';
+export type FailureCode = 'auth' | 'policy' | 'privacy' | 'source-offline' | 'unsupported-codec' | 'unsupported-api' | 'network' | 'ice' | 'timeout' | 'buffer' | 'cancelled' | 'autoplay' | 'configuration' | 'proxy' | 'rate-limit' | 'password-change' | 'totp';
 export interface PlaybackFailure { code: FailureCode; message: string; status?: number; retryAfterMs?: number }
 /** Safe fixed messages only; raw upstream text, SDP and URLs must never be copied. */
 export class NvrError extends Error {

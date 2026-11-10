@@ -7,6 +7,7 @@ const messages: Record<FailureCode, string> = {
   'source-offline': 'Source is offline.', 'unsupported-codec': 'Media codec is unsupported.',
   'unsupported-api': 'Server response or API is unsupported.', network: 'Server is unreachable.', ice: 'Media connection failed.',
   timeout: 'Request timed out.', buffer: 'Media buffer failed.', cancelled: 'Request cancelled.',
+  autoplay: 'Playback needs a user gesture.',
   configuration: 'Connection configuration is invalid or conflicts with an active identity.', proxy: 'Proxy request failed.',
   'rate-limit': 'Too many requests. Try again later.', 'password-change': 'Password change is required.', totp: 'Interactive authentication is required.',
 };

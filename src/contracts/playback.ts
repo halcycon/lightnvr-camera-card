@@ -25,9 +25,11 @@ export interface TalkController {
   /** Serial detach; stops all owned tracks; repeat-safe. */
   stop():Promise<void>;
   readonly state:TalkState;
+  /** Immutable state updates, including pending permission and optional local meter. */
+  subscribe(listener:(state:Readonly<TalkState>)=>void):()=>void;
   dispose():Promise<void>;
 }
-export interface PlaybackSnapshot { state:PlaybackState; transport?:Transport; failure?:PlaybackFailure; attempt:number; talking:boolean }
+export interface PlaybackSnapshot { state:PlaybackState; transport?:Transport; failure?:PlaybackFailure; attempt:number; talking:boolean; talk:Readonly<TalkState> }
 export interface PlaybackController {
   readonly snapshot:PlaybackSnapshot;
   start(video:HTMLVideoElement, config:CardConfigV1, signal?:AbortSignal):Promise<void>;

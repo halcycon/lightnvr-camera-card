@@ -11,7 +11,7 @@ describe('frozen configuration',()=>{
   }
  });
  it('round trips every advanced setting',()=>{
-  const c=validateConfig({...base,go2rtc_path:'nested/go2rtc/',source:'exact_sub',video:{enabled:true},audio:{listen:false,microphone:true},visibility:{hidden:'continue',offscreen:'pause'},layout:{object_fit:'cover',aspect_ratio:4/3,fullscreen_main:true},ice_servers:[{urls:['turn:relay.example.test:3478'],username:'EXAMPLE',credential:'EXAMPLE'}],timeouts:{webrtc_ms:12000,mse_ms:13000,hls_ms:14000},controls:{refresh_source:false}});
+  const c=validateConfig({...base,viewer_url:'https://nvr.example.test/',go2rtc_path:'nested/go2rtc/',source:'exact_sub',video:{enabled:true},audio:{listen:false,microphone:true},visibility:{hidden:'continue',offscreen:'pause'},layout:{object_fit:'cover',aspect_ratio:4/3,fullscreen_main:true},ice_servers:[{urls:['turn:relay.example.test:3478'],username:'EXAMPLE',credential:'EXAMPLE'}],timeouts:{webrtc_ms:12000,mse_ms:13000,hls_ms:14000},controls:{refresh_source:false}});
   expect(validateConfig(JSON.parse(JSON.stringify(c)))).toEqual(c);
  });
  it.each([
