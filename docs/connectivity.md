@@ -130,7 +130,7 @@ podman run --rm --network none --read-only --cap-drop ALL \
 # and change the -f value to compose.yaml.
 ```
 
-T3 also runs `node_modules/.bin/eslint tests/proxy examples/proxy/router.mjs` and `npm run typecheck`. Shared package/lockfile security updates are coordinator-owned. No global lint/build/install, shared dist output, Git/index changes or deployment are part of this task.
+The original T3 receipt records its then-current ESLint checks. Current source/workflow/TypeScript checks run through Tailor’s `just lint`; see [development setup](development.md). Protocol/proxy suites remain explicit isolated checks.
 
 Primary proxy references: [Traefik forwarded-header trust](https://doc.traefik.io/traefik/v3.7/reference/install-configuration/entrypoints/), [Host forwarding](https://doc.traefik.io/traefik/v3.7/reference/routing-configuration/http/load-balancing/service/), [StripPrefix behavior](https://doc.traefik.io/traefik/v3.7/reference/routing-configuration/http/middlewares/stripprefix/), and [Docker Compose config semantics](https://docs.docker.com/reference/cli/docker/compose/config/).
 

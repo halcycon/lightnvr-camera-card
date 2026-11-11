@@ -8,7 +8,7 @@ For deployment, follow [connectivity](connectivity.md) and [TLS/two-way audio](t
 
 For maintenance:
 
-1. Install Node 22.22.2/npm 11.8.0 and run `npm ci`, typecheck, lint and unit tests.
+1. Follow [development setup](development.md), then use Tailor’s `just lint`, `just test` and `just build` entry points. Node 22.22.2/npm 11.8.0 remain the regular CI baseline.
 2. Reproduce actual probe/proxy/HA acceptance with generated fixtures, sequentially; [instructions](../tests/e2e/README.md). A missing-fixture skip is not a compatibility pass.
 3. Build with `npm run build` (default `dist`) or an explicit private `LIGHTNVR_BUILD_DIR`. Run `npm run check:release` against that same directory. Inspect the single module and embedded notices.
 4. Review and explicitly update only the verified `dist/lightnvr-camera-card.js` when publishing development changes. CI builds into temporary storage and never updates `main` itself.

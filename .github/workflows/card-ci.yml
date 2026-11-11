@@ -24,11 +24,13 @@ jobs:
           echo "LIGHTNVR_BUILD_DIR=$RUNNER_TEMP/lightnvr-card-build" >> "$GITHUB_ENV"
           npm install --global npm@11.8.0
       - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run test:unit
-      - run: npm run build
-      - run: npm run check:release
+      - name: Install pinned Tailor quality tools
+        run: |
+          npm run setup:tools
+          echo "$GITHUB_WORKSPACE/.execution/quality-tools/bin" >> "$GITHUB_PATH"
+      - run: just lint
+      - run: just test
+      - run: just build
       - name: Validate card examples against the frozen schema
         shell: bash
         run: |
@@ -74,3 +76,21 @@ jobs:
           category: plugin
           comment: 'false'
           github_token: ${{ secrets.GITHUB_TOKEN }}
+  nix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@91f6a0f59e94dfb2cfed0f4000f36a68ead1d20c # v31.11.4
+      - name: Check the locked Tailor development shell
+        run: |
+          nix flake check --no-build
+          nix develop --command bash -eu <<'SH'
+          node --version
+          npx --yes --package npm@11.8.0 npm ci
+          just lint
+          just test
+          LIGHTNVR_BUILD_DIR="$RUNNER_TEMP/lightnvr-nix-build" just build
+          SH

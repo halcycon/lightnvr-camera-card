@@ -1,5 +1,5 @@
 {
-  description = "Nix flake";
+  description = "lightNVR camera card development environment";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
@@ -20,12 +20,14 @@
         "aarch64-linux"
       ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+      # Tailor owns the generic JavaScript fragment; the project selects Node 22 here.
+      nodeOverlay = _final: prev: { nodejs = prev.nodejs_22; };
     in
     {
       packages = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = import nixpkgs { inherit system; overlays = [ nodeOverlay ]; };
         in
         pkgs.lib.optionalAttrs (builtins.pathExists ./nix/lib/blender.nix) {
           blender-agent-bridge-extension = (import ./nix/lib/blender.nix { inherit pkgs; }).extension;
@@ -34,7 +36,7 @@
       devShells = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = import nixpkgs { inherit system; overlays = [ nodeOverlay ]; };
           # Keep the development shell available when Tailor has no package for this system.
           tailorPkgs = nix-packages.packages.${system} or { };
         in

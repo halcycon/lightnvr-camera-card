@@ -6397,9 +6397,13 @@ const sS = St(["webrtc", "mse", "hls"]), ks = Ye().int().min(100).max(3e5), eu =
     const t = new URL(i, "https://dashboard.invalid");
     if (!["http:", "https:"].includes(t.protocol) || t.username || t.password || t.search || t.hash)
       throw new Error();
-    if (!i.startsWith("/") && !/^https?:\/\//.test(i)) throw new Error();
+    if (!i.startsWith("/") && !/^https?:\/\//.test(i))
+      throw new Error();
   } catch {
-    e.addIssue({ code: "custom", message: "Use an HTTP(S) server or same-origin path without userinfo, query or fragment" });
+    e.addIssue({
+      code: "custom",
+      message: "Use an HTTP(S) server or same-origin path without userinfo, query or fragment"
+    });
   }
 }), Tt = Ye().finite().nonnegative(), iS = Ee({
   columns: Tt.or(yt("full")).optional(),
@@ -6439,24 +6443,90 @@ const sS = St(["webrtc", "mse", "hls"]), ks = Ye().int().min(100).max(3e5), eu =
   profile: St(["main", "sub"]).default("main"),
   title: me().optional(),
   transports: Wt(sS).min(1).max(3).default(["webrtc", "mse", "hls"]).refine((i) => new Set(i).size === i.length, "Duplicate transports"),
-  hls: Ee({ provider: St(["auto", "go2rtc", "native"]).default("auto") }).strict().prefault({}),
-  timeouts: Ee({ connection_ms: ks.or(yt("inherit")).default(3e4), ice_grace_ms: ks.default(5e3), webrtc_ms: ks.optional(), mse_ms: ks.optional(), hls_ms: ks.optional() }).strict().prefault({}),
-  retry: Ee({ base_ms: ks.default(2e3), cap_ms: ks.default(3e4), attempts: Ye().int().min(0).max(100).default(5), jitter: Ye().min(0).max(1).default(0.2) }).strict().prefault({}),
+  hls: Ee({
+    provider: St(["auto", "go2rtc", "native"]).default("auto")
+  }).strict().prefault({}),
+  timeouts: Ee({
+    connection_ms: ks.or(yt("inherit")).default(3e4),
+    ice_grace_ms: ks.default(5e3),
+    webrtc_ms: ks.optional(),
+    mse_ms: ks.optional(),
+    hls_ms: ks.optional()
+  }).strict().prefault({}),
+  retry: Ee({
+    base_ms: ks.default(2e3),
+    cap_ms: ks.default(3e4),
+    attempts: Ye().int().min(0).max(100).default(5),
+    jitter: Ye().min(0).max(1).default(0.2)
+  }).strict().prefault({}),
   video: Ee({ enabled: yt(!0) }).strict().default({ enabled: !0 }),
-  audio: Ee({ enabled: he().default(!0), listen: he().default(!0), muted: he().default(!0), microphone: he().default(!1), talk_mode: St(["ptt", "toggle"]).default("ptt"), volume: Ye().min(0).max(1).default(1) }).strict().prefault({}),
-  controls: Ee({ speaker: he().optional(), microphone: he().optional(), fullscreen: he().optional(), snapshot: he().optional(), transport: he().optional(), profile: he().optional(), zoom: he().optional(), ptz: he().optional(), daynight: he().optional(), recording: he().optional(), privacy: he().optional(), detection: he().optional(), refresh_source: he().optional(), timeline: he().optional() }).strict().prefault({}),
-  layout: Ee({ aspect_ratio: Ye().positive().default(16 / 9), object_fit: St(["contain", "cover"]).default("contain"), fullscreen_main: he().default(!1) }).strict().prefault({}),
-  playback_visibility: Ee({ hidden: St(["pause", "continue"]).default("pause"), offscreen: St(["pause", "continue"]).default("pause") }).strict().prefault({}),
+  audio: Ee({
+    enabled: he().default(!0),
+    listen: he().default(!0),
+    muted: he().default(!0),
+    microphone: he().default(!1),
+    talk_mode: St(["ptt", "toggle"]).default("ptt"),
+    volume: Ye().min(0).max(1).default(1)
+  }).strict().prefault({}),
+  controls: Ee({
+    speaker: he().optional(),
+    microphone: he().optional(),
+    fullscreen: he().optional(),
+    snapshot: he().optional(),
+    transport: he().optional(),
+    profile: he().optional(),
+    zoom: he().optional(),
+    ptz: he().optional(),
+    daynight: he().optional(),
+    recording: he().optional(),
+    privacy: he().optional(),
+    detection: he().optional(),
+    refresh_source: he().optional(),
+    timeline: he().optional()
+  }).strict().prefault({}),
+  layout: Ee({
+    aspect_ratio: Ye().positive().default(16 / 9),
+    object_fit: St(["contain", "cover"]).default("contain"),
+    fullscreen_main: he().default(!1)
+  }).strict().prefault({}),
+  playback_visibility: Ee({
+    hidden: St(["pause", "continue"]).default("pause"),
+    offscreen: St(["pause", "continue"]).default("pause")
+  }).strict().prefault({}),
   /** Home Assistant owns layout and conditional visibility; these never control media URLs or credentials. */
   ...of,
-  ice_servers: Wt(Ee({ urls: En([me().regex(/^turns?:|^stuns?:/), Wt(me().regex(/^turns?:|^stuns?:/)).min(1)]), username: me().optional(), credential: me().optional() }).strict()).max(16).optional()
+  ice_servers: Wt(
+    Ee({
+      urls: En([
+        me().regex(/^turns?:|^stuns?:/),
+        Wt(me().regex(/^turns?:|^stuns?:/)).min(1)
+      ]),
+      username: me().optional(),
+      credential: me().optional()
+    }).strict()
+  ).max(16).optional()
 }).strict().superRefine((i, e) => {
-  i.retry.cap_ms < i.retry.base_ms && e.addIssue({ code: "custom", path: ["retry"], message: "Retry cap must be at least base" }), !i.audio.enabled && (i.audio.microphone || i.audio.listen) && e.addIssue({ code: "custom", path: ["audio"], message: "Disabled audio requires listen and microphone to be false" }), i.audio.microphone && !i.transports.includes("webrtc") && e.addIssue({ code: "custom", path: ["audio", "microphone"], message: "Microphone requires WebRTC in the transport order" });
+  i.retry.cap_ms < i.retry.base_ms && e.addIssue({
+    code: "custom",
+    path: ["retry"],
+    message: "Retry cap must be at least base"
+  }), !i.audio.enabled && (i.audio.microphone || i.audio.listen) && e.addIssue({
+    code: "custom",
+    path: ["audio"],
+    message: "Disabled audio requires listen and microphone to be false"
+  }), i.audio.microphone && !i.transports.includes("webrtc") && e.addIssue({
+    code: "custom",
+    path: ["audio", "microphone"],
+    message: "Microphone requires WebRTC in the transport order"
+  });
 }), oS = tS((i) => {
   if (i && typeof i == "object" && !Array.isArray(i)) {
     const e = i;
     if (e.visibility && typeof e.visibility == "object" && !Array.isArray(e.visibility) && e.playback_visibility === void 0) {
-      const t = { ...e, playback_visibility: e.visibility };
+      const t = {
+        ...e,
+        playback_visibility: e.visibility
+      };
       return delete t.visibility, t;
     }
   }
@@ -6465,7 +6535,15 @@ const sS = St(["webrtc", "mse", "hls"]), ks = Ye().int().min(100).max(3e5), eu =
 function ys(i) {
   return oS.parse(i);
 }
-const qr = ["grid_options", "layout_options", "view_layout", "visibility", "index", "view_index", "disabled"];
+const qr = [
+  "grid_options",
+  "layout_options",
+  "view_layout",
+  "visibility",
+  "index",
+  "view_index",
+  "disabled"
+];
 function Vs(i) {
   const e = structuredClone(i);
   for (const t of qr) delete e[t];
@@ -6477,11 +6555,28 @@ function aS(i) {
     server: me(),
     url: me().min(1),
     mode: St(["webrtc", "mse", "hls"]).optional(),
-    media: En([me().refine((o) => o.split(",").every((a) => ["video", "audio", "microphone"].includes(a.trim())), "Unknown legacy media token"), Ee({ video: he().optional(), audio: he().optional(), microphone: he().optional() }).strict()]).optional(),
+    media: En([
+      me().refine(
+        (o) => o.split(",").every(
+          (a) => ["video", "audio", "microphone"].includes(a.trim())
+        ),
+        "Unknown legacy media token"
+      ),
+      Ee({
+        video: he().optional(),
+        audio: he().optional(),
+        microphone: he().optional()
+      }).strict()
+    ]).optional(),
     ui: he().optional(),
     ...of
-  }).strict().parse(i), t = typeof e.media == "string" ? { video: e.media.split(",").map((o) => o.trim()).includes("video"), audio: e.media.split(",").map((o) => o.trim()).includes("audio"), microphone: e.media.split(",").map((o) => o.trim()).includes("microphone") } : e.media;
-  if (t?.video === !1) throw new Error("Audio-only legacy configuration requires manual review");
+  }).strict().parse(i), t = typeof e.media == "string" ? {
+    video: e.media.split(",").map((o) => o.trim()).includes("video"),
+    audio: e.media.split(",").map((o) => o.trim()).includes("audio"),
+    microphone: e.media.split(",").map((o) => o.trim()).includes("microphone")
+  } : e.media;
+  if (t?.video === !1)
+    throw new Error("Audio-only legacy configuration requires manual review");
   const s = new URL(e.server), n = decodeURIComponent(s.username), r = decodeURIComponent(s.password);
   return s.username = "", s.password = "", s.pathname = s.pathname.replace(/\/go2rtc\/?$/, "/"), {
     config: ys({
@@ -6489,13 +6584,40 @@ function aS(i) {
       server: s.href,
       stream: e.url,
       source: e.url,
-      ...Object.fromEntries(qr.filter((o) => e[o] !== void 0).map((o) => [o, e[o]])),
+      ...Object.fromEntries(
+        qr.filter((o) => e[o] !== void 0).map(
+          (o) => [o, e[o]]
+        )
+      ),
       ...n ? { username: n, password: r } : {},
       ...e.mode ? { transports: [e.mode] } : {},
-      audio: { listen: t?.audio ?? !0, muted: t?.audio !== !0, microphone: t?.microphone ?? !1 },
-      ...e.ui === !1 ? { controls: { speaker: !1, microphone: !1, fullscreen: !1, snapshot: !1, transport: !1, profile: !1, zoom: !1, ptz: !1, daynight: !1, recording: !1, privacy: !1, detection: !1, refresh_source: !1, timeline: !1 } } : {}
+      audio: {
+        listen: t?.audio ?? !0,
+        muted: t?.audio !== !0,
+        microphone: t?.microphone ?? !1
+      },
+      ...e.ui === !1 ? {
+        controls: {
+          speaker: !1,
+          microphone: !1,
+          fullscreen: !1,
+          snapshot: !1,
+          transport: !1,
+          profile: !1,
+          zoom: !1,
+          ptz: !1,
+          daynight: !1,
+          recording: !1,
+          privacy: !1,
+          detection: !1,
+          refresh_source: !1,
+          timeline: !1
+        }
+      } : {}
     }),
-    warnings: ["Review credentials stored in dashboard configuration; exact legacy source preserved."]
+    warnings: [
+      "Review credentials stored in dashboard configuration; exact legacy source preserved."
+    ]
   };
 }
 class Pe extends Error {
@@ -6504,7 +6626,11 @@ class Pe extends Error {
   }
 }
 const tu = En([
-  Ee({ success: yt(!0), redirect: me().optional(), must_change_password: he().optional() }),
+  Ee({
+    success: yt(!0),
+    redirect: me().optional(),
+    must_change_password: he().optional()
+  }),
   Ee({ totp_required: yt(!0), totp_token: me().min(1) })
 ]), lS = Ee({
   name: me().min(1),
@@ -6520,22 +6646,58 @@ const tu = En([
   recording_active: he().optional(),
   go2rtc_hls_available: he().optional(),
   playback_transport: me().optional()
-}), cS = Ee({ streams: Wt(lS), page: Ye().int().min(1), page_size: Ye().int().min(1), total: Ye().int().min(0), total_pages: Ye().int().min(0) });
+}), cS = Ee({
+  streams: Wt(lS),
+  page: Ye().int().min(1),
+  page_size: Ye().int().min(1),
+  total: Ye().int().min(0),
+  total_pages: Ye().int().min(0)
+});
 function af(i, e, t = /* @__PURE__ */ new Set()) {
-  return t.has(i) || e?.capabilities[i] === "denied" ? { enabled: !1, reason: "Denied or unsupported by server" } : (i === "snapshot" || i === "detection") && e?.privacy === !0 ? { enabled: !1, reason: "Camera privacy is enabled" } : e ? i === "ptz" && e.ptz === "denied" ? { enabled: !1, reason: "PTZ hardware unavailable" } : { enabled: !0, reason: e.capabilities[i] === "allowed" ? "" : "Permission unverified; server checks each request" } : { enabled: !1, reason: "Requires a known canonical camera" };
+  return t.has(i) || e?.capabilities[i] === "denied" ? { enabled: !1, reason: "Denied or unsupported by server" } : (i === "snapshot" || i === "detection") && e?.privacy === !0 ? { enabled: !1, reason: "Camera privacy is enabled" } : e ? i === "ptz" && e.ptz === "denied" ? { enabled: !1, reason: "PTZ hardware unavailable" } : {
+    enabled: !0,
+    reason: e.capabilities[i] === "allowed" ? "" : "Permission unverified; server checks each request"
+  } : { enabled: !1, reason: "Requires a known canonical camera" };
 }
 function yo(i, e, t, s, n, r = globalThis.isSecureContext) {
-  if (n?.privacy === !0) return { enabled: !1, reason: "Camera privacy is enabled" };
-  if (!e.audio.enabled || s?.audioDisabled === !0 || n?.capabilities[i] === "denied") return { enabled: !1, reason: "Audio disabled or permission denied" };
-  if (i === "audio.listen") return { enabled: e.audio.listen, reason: e.audio.listen ? "Local speaker only; microphone is independent" : "Listening disabled in configuration" };
-  if (!e.audio.microphone) return { enabled: !1, reason: "Microphone disabled in configuration" };
-  if (!r) return { enabled: !1, reason: "Microphone requires a secure Home Assistant document" };
-  const o = new URL(globalThis.location?.href ?? "https://dashboard.invalid"), a = new URL(e.server, o), l = a.protocol === "http:" && a.origin === o.origin && ["localhost", "127.0.0.1", "[::1]"].includes(a.hostname);
-  return a.protocol !== "https:" && !l ? { enabled: !1, reason: "Microphone requires trusted HTTPS/WSS to lightNVR" } : n?.backchannel !== "allowed" ? { enabled: !1, reason: "Compatible camera backchannel has not been confirmed" } : t.transport !== "webrtc" || t.state !== "playing" ? { enabled: !1, reason: "Microphone requires playing WebRTC with a negotiated backchannel" } : { enabled: !0, reason: n.capabilities[i] === "allowed" ? "Browser microphone permission is also required" : "Talk permission unverified; server and browser must authorize" };
+  if (n?.privacy === !0)
+    return { enabled: !1, reason: "Camera privacy is enabled" };
+  if (!e.audio.enabled || s?.audioDisabled === !0 || n?.capabilities[i] === "denied")
+    return { enabled: !1, reason: "Audio disabled or permission denied" };
+  if (i === "audio.listen")
+    return {
+      enabled: e.audio.listen,
+      reason: e.audio.listen ? "Local speaker only; microphone is independent" : "Listening disabled in configuration"
+    };
+  if (!e.audio.microphone)
+    return { enabled: !1, reason: "Microphone disabled in configuration" };
+  if (!r)
+    return {
+      enabled: !1,
+      reason: "Microphone requires a secure Home Assistant document"
+    };
+  const o = new URL(
+    globalThis.location?.href ?? "https://dashboard.invalid"
+  ), a = new URL(e.server, o), l = a.protocol === "http:" && a.origin === o.origin && ["localhost", "127.0.0.1", "[::1]"].includes(a.hostname);
+  return a.protocol !== "https:" && !l ? {
+    enabled: !1,
+    reason: "Microphone requires trusted HTTPS/WSS to lightNVR"
+  } : n?.backchannel !== "allowed" ? {
+    enabled: !1,
+    reason: "Compatible camera backchannel has not been confirmed"
+  } : t.transport !== "webrtc" || t.state !== "playing" ? {
+    enabled: !1,
+    reason: "Microphone requires playing WebRTC with a negotiated backchannel"
+  } : {
+    enabled: !0,
+    reason: n.capabilities[i] === "allowed" ? "Browser microphone permission is also required" : "Talk permission unverified; server and browser must authorize"
+  };
 }
 function uS(i, e) {
   const t = Math.max(0.05, Math.min(1, e));
-  return Object.fromEntries(Object.entries(i).filter(([s]) => s !== "speed").map(([s, n]) => [s, Math.max(-1, Math.min(1, n)) * t]));
+  return Object.fromEntries(
+    Object.entries(i).filter(([s]) => s !== "speed").map(([s, n]) => [s, Math.max(-1, Math.min(1, n)) * t])
+  );
 }
 function hS(i, e = globalThis.location?.href) {
   if (i.viewer_url)
@@ -6550,14 +6712,18 @@ function su(i, e, t = /* @__PURE__ */ new Date(), s = !1, n = globalThis.locatio
   return a.search = `?stream=${encodeURIComponent(e.name)}&date=${c}&time=${u}${s ? "&fullscreen=1&nav=fine" : ""}`, a.href;
 }
 async function dS(i) {
-  if (!i.videoWidth || !i.videoHeight) throw new Error("No decoded video");
+  if (!i.videoWidth || !i.videoHeight)
+    throw new Error("No decoded video");
   const e = document.createElement("canvas");
   e.width = i.videoWidth, e.height = i.videoHeight;
   const t = e.getContext("2d");
   if (!t) throw new Error("Canvas unavailable");
   return t.drawImage(i, 0, 0), new Promise((s, n) => {
     try {
-      e.toBlob((r) => r ? s(r) : n(new Error("Snapshot unavailable")), "image/jpeg");
+      e.toBlob(
+        (r) => r ? s(r) : n(new Error("Snapshot unavailable")),
+        "image/jpeg"
+      );
     } catch {
       n(new Error("Canvas snapshot blocked by browser origin policy"));
     }
@@ -6579,18 +6745,27 @@ async function fS(i, e) {
     if (e.aborted) throw new Pe({ code: "cancelled", message: "" });
     for (; ; ) {
       const { done: l, value: c } = await t.read();
-      if (e.aborted || r) throw new Pe({ code: e.aborted ? "cancelled" : "timeout", message: "" });
+      if (e.aborted || r)
+        throw new Pe({
+          code: e.aborted ? "cancelled" : "timeout",
+          message: ""
+        });
       if (l) break;
-      if (n += c.byteLength, n > 16 * 1024 * 1024 || s.length >= 4096) throw new Pe({ code: "buffer", message: "" });
+      if (n += c.byteLength, n > 16 * 1024 * 1024 || s.length >= 4096)
+        throw new Pe({ code: "buffer", message: "" });
       s.push(new Uint8Array(c));
     }
     if (!n) throw new Pe({ code: "unsupported-api", message: "" });
-    return new Blob(s, { type: i.headers.get("Content-Type") ?? "image/jpeg" });
+    return new Blob(s, {
+      type: i.headers.get("Content-Type") ?? "image/jpeg"
+    });
   } finally {
     clearTimeout(a), e.removeEventListener("abort", o), o();
   }
 }
-const Yr = (i) => Array.from(i).some((e) => e.charCodeAt(0) < 32 || e.charCodeAt(0) === 127), fa = {
+const Yr = (i) => Array.from(i).some(
+  (e) => e.charCodeAt(0) < 32 || e.charCodeAt(0) === 127
+), fa = {
   auth: "Authentication required or rejected.",
   policy: "Permission denied.",
   privacy: "Camera privacy is enabled.",
@@ -6623,9 +6798,11 @@ function qt(i) {
 }
 function pS(i, e = globalThis.location?.href) {
   try {
-    if (!e && i.server.startsWith("/") || !/^(https?:\/\/|\/(?!\/))/.test(i.server) || /[\\\s]/.test(i.server)) throw U("configuration");
+    if (!e && i.server.startsWith("/") || !/^(https?:\/\/|\/(?!\/))/.test(i.server) || /[\\\s]/.test(i.server))
+      throw U("configuration");
     const t = new URL(i.server, e);
-    if (!["http:", "https:"].includes(t.protocol) || t.username || t.password || t.search || t.hash || /%|\/\//.test(t.pathname) || i.server.split("/").some((s) => s === "." || s === "..") || (t.pathname = t.pathname.replace(/\/$/, "") + "/", !/^(?:[a-zA-Z0-9_-]+\/)+$/.test(i.go2rtc_path))) throw U("configuration");
+    if (!["http:", "https:"].includes(t.protocol) || t.username || t.password || t.search || t.hash || /%|\/\//.test(t.pathname) || i.server.split("/").some((s) => s === "." || s === "..") || (t.pathname = t.pathname.replace(/\/$/, "") + "/", !/^(?:[a-zA-Z0-9_-]+\/)+$/.test(i.go2rtc_path)))
+      throw U("configuration");
     return Object.freeze({
       baseUrl: t.href,
       go2rtcUrl: new URL(i.go2rtc_path, t).href,
@@ -6640,27 +6817,37 @@ function pS(i, e = globalThis.location?.href) {
   }
 }
 function iu(i, e) {
-  if (!e || e.startsWith("/") || e.startsWith("\\") || /[\\#\s]/.test(e) || /^[a-z][a-z\d+.-]*:/i.test(e)) throw U("configuration");
+  if (!e || e.startsWith("/") || e.startsWith("\\") || /[\\#\s]/.test(e) || /^[a-z][a-z\d+.-]*:/i.test(e))
+    throw U("configuration");
   let t;
   try {
     t = decodeURIComponent(e.split("?")[0]);
   } catch {
     throw U("configuration");
   }
-  if (t.includes("%") || t.split("/").some((n) => n === "." || n === "..") || t.includes("\\") || Yr(t)) throw U("configuration");
+  if (t.includes("%") || t.split("/").some((n) => n === "." || n === "..") || t.includes("\\") || Yr(t))
+    throw U("configuration");
   const s = new URL(e, i.baseUrl);
-  if (s.origin !== i.origin || !s.pathname.startsWith(new URL(i.baseUrl).pathname)) throw U("configuration");
+  if (s.origin !== i.origin || !s.pathname.startsWith(new URL(i.baseUrl).pathname))
+    throw U("configuration");
   return s;
 }
 function gS(i, e) {
-  if (i.includes(":") || Yr(i + e)) throw U("configuration");
-  return "Basic " + btoa(Array.from(new TextEncoder().encode(`${i}:${e}`), (t) => String.fromCharCode(t)).join(""));
+  if (i.includes(":") || Yr(i + e))
+    throw U("configuration");
+  return "Basic " + btoa(
+    Array.from(
+      new TextEncoder().encode(`${i}:${e}`),
+      (t) => String.fromCharCode(t)
+    ).join("")
+  );
 }
 function vo(i) {
   if (i?.aborted) throw U("cancelled");
 }
 function Eo(i) {
-  if (!i || i.length > 255 || i.includes("/") || i.includes("\\") || Yr(i) || i === "." || i === "..") throw U("configuration");
+  if (!i || i.length > 255 || i.includes("/") || i.includes("\\") || Yr(i) || i === "." || i === "..")
+    throw U("configuration");
   return `api/streams/${encodeURIComponent(i)}`;
 }
 const sr = (i) => i === !0 ? "allowed" : i === !1 ? "denied" : "unknown", mS = {
@@ -6675,7 +6862,10 @@ function yS(i) {
   return {
     name: i.name,
     ...i.camera_uuid === void 0 ? {} : { uuid: i.camera_uuid },
-    sources: { main: i.name, ...i.has_sub_stream === !0 ? { sub: `${i.name}_sub` } : {} },
+    sources: {
+      main: i.name,
+      ...i.has_sub_stream === !0 ? { sub: `${i.name}_sub` } : {}
+    },
     status: i.enabled === !1 ? "disabled" : e === "running" || e === "online" ? "online" : e === "offline" || e === "error" || e === "stopped" ? "offline" : "unknown",
     privacy: i.privacy_mode ?? "unknown",
     // Hardware flags establish absence only; hardware availability is not an action grant.
@@ -6699,17 +6889,28 @@ function yS(i) {
 }
 function dl(i, e) {
   const t = i.camera_uuid ? e.find((n) => n.uuid === i.camera_uuid) : e.find((n) => n.name === i.stream);
-  if (i.source !== void 0) return {
-    source: i.source,
-    profile: i.profile,
-    ...t ? { camera: t.name, ...t.uuid ? { uuid: t.uuid } : {} } : {}
-  };
+  if (i.source !== void 0)
+    return {
+      source: i.source,
+      profile: i.profile,
+      ...t ? { camera: t.name, ...t.uuid ? { uuid: t.uuid } : {} } : {}
+    };
   if (!t) throw U("configuration");
   const s = t.sources[i.profile];
   if (!s) throw U("configuration");
-  return { source: s, camera: t.name, profile: i.profile, ...t.uuid ? { uuid: t.uuid } : {} };
+  return {
+    source: s,
+    camera: t.name,
+    profile: i.profile,
+    ...t.uuid ? { uuid: t.uuid } : {}
+  };
 }
-const vS = Ee({ success: yt(!0) }), ES = Ee({ authenticated: yt(!0), username: me().min(1), role: me().optional(), must_change_password: he().optional() }), bS = Ee({
+const vS = Ee({ success: yt(!0) }), ES = Ee({
+  authenticated: yt(!0),
+  username: me().min(1),
+  role: me().optional(),
+  must_change_password: he().optional()
+}), bS = Ee({
   go2rtc_enabled: he().optional(),
   go2rtc_available: he().optional(),
   go2rtc_force_native_hls: he().optional(),
@@ -6720,21 +6921,60 @@ const vS = Ee({ success: yt(!0) }), ES = Ee({ authenticated: yt(!0), username: m
   default_playback_transport: me().optional(),
   webrtc_connection_timeout_ms: Ye().finite().min(100).max(3e5).optional(),
   webrtc_ice_recovery_timeout_ms: Ye().finite().min(0).max(3e5).optional()
-}), SS = Ee({ ice_servers: Wt(Ee({ urls: En([me(), Wt(me()).min(1)]), username: me().optional(), credential: me().optional() })).max(32) }), TS = Ee({ detections: Wt(Ee({ x: Ye().finite(), y: Ye().finite(), width: Ye().finite().nonnegative(), height: Ye().finite().nonnegative(), label: me(), confidence: Ye().finite().optional() })) });
+}), SS = Ee({
+  ice_servers: Wt(
+    Ee({
+      urls: En([me(), Wt(me()).min(1)]),
+      username: me().optional(),
+      credential: me().optional()
+    })
+  ).max(32)
+}), TS = Ee({
+  detections: Wt(
+    Ee({
+      x: Ye().finite(),
+      y: Ye().finite(),
+      width: Ye().finite().nonnegative(),
+      height: Ye().finite().nonnegative(),
+      label: me(),
+      confidence: Ye().finite().optional()
+    })
+  )
+});
 function cf(i) {
   return i && typeof i == "object" && (Object.values(i).forEach(cf), Object.freeze(i)), i;
 }
 function AS(i = {}) {
-  const e = /* @__PURE__ */ new Map(), t = i.fetch ?? globalThis.fetch.bind(globalThis), s = i.now ?? Date.now, n = Math.max(100, Math.min(i.requestTimeoutMs ?? 1e4, 6e4)), r = Math.max(0, Math.min(i.cacheTtlMs ?? 3e4, 6e4));
+  const e = /* @__PURE__ */ new Map(), t = i.fetch ?? globalThis.fetch.bind(globalThis), s = i.now ?? Date.now, n = Math.max(
+    100,
+    Math.min(i.requestTimeoutMs ?? 1e4, 6e4)
+  ), r = Math.max(0, Math.min(i.cacheTtlMs ?? 3e4, 6e4));
   return (o) => {
     const a = pS(o, i.documentUrl), l = `${a.sessionScope}|${a.auth}`;
     let c = e.get(l);
-    c || (c = { refs: 0, epoch: 0, blockedUntil: 0, memo: /* @__PURE__ */ new Map(), controller: new AbortController(), authenticatedUntil: 0, conflicted: !1 }, e.set(l, c)), c.refs++;
+    c || (c = {
+      refs: 0,
+      epoch: 0,
+      blockedUntil: 0,
+      memo: /* @__PURE__ */ new Map(),
+      controller: new AbortController(),
+      authenticatedUntil: 0,
+      conflicted: !1
+    }, e.set(l, c)), c.refs++;
     const u = () => {
       --c.refs === 0 && (c.controller.abort(), c.memo.clear(), delete c.credentials, delete c.challenge, e.delete(l));
     };
     try {
-      return new _S(o, a, c, t, s, n, r, u);
+      return new _S(
+        o,
+        a,
+        c,
+        t,
+        s,
+        n,
+        r,
+        u
+      );
     } catch (h) {
       throw u(), h;
     }
@@ -6744,7 +6984,8 @@ class _S {
   constructor(e, t, s, n, r, o, a, l) {
     if (this.config = e, this.profile = t, this.scope = s, this.fetcher = n, this.now = r, this.timeout = o, this.ttl = a, this.release = l, this.disposed = !1, this.lifetime = new AbortController(), s.conflicted) throw U("configuration");
     if (e.username !== void 0) {
-      if (s.requestedIdentity && s.requestedIdentity !== e.username || s.identity && s.identity !== e.username) throw U("configuration");
+      if (s.requestedIdentity && s.requestedIdentity !== e.username || s.identity && s.identity !== e.username)
+        throw U("configuration");
       s.requestedIdentity = e.username;
     }
     e.username !== void 0 && e.password !== void 0 && this.claim({ username: e.username, password: e.password });
@@ -6769,9 +7010,11 @@ class _S {
     });
   }
   claim(e) {
-    if (this.alive(), !e.username || typeof e.password != "string") throw U("configuration");
+    if (this.alive(), !e.username || typeof e.password != "string")
+      throw U("configuration");
     const t = this.scope;
-    if (t.requestedIdentity && t.requestedIdentity !== e.username || t.identity && t.identity !== e.username || t.credentials && t.credentials.username !== e.username) throw U("configuration");
+    if (t.requestedIdentity && t.requestedIdentity !== e.username || t.identity && t.identity !== e.username || t.credentials && t.credentials.username !== e.username)
+      throw U("configuration");
     if (t.credentials && t.credentials.password !== e.password) {
       if (t.refs > 1 || t.auth) throw U("configuration");
       t.controller.abort(), t.controller = new AbortController(), t.memo.clear(), delete t.challenge, t.authenticatedUntil = 0, t.epoch++;
@@ -6789,9 +7032,17 @@ class _S {
   authenticate(e = !1) {
     const t = this.scope;
     if (t.auth) return t.auth;
-    if (!e && t.challenge) return Promise.resolve({ kind: "totp-required", challenge: t.challenge });
-    if (!e && t.authenticatedUntil > this.now()) return Promise.resolve({ kind: "authenticated", mustChangePassword: !1 });
-    if (t.blockedUntil > this.now()) return Promise.reject(U("rate-limit", 429, t.blockedUntil - this.now()));
+    if (!e && t.challenge)
+      return Promise.resolve({ kind: "totp-required", challenge: t.challenge });
+    if (!e && t.authenticatedUntil > this.now())
+      return Promise.resolve({
+        kind: "authenticated",
+        mustChangePassword: !1
+      });
+    if (t.blockedUntil > this.now())
+      return Promise.reject(
+        U("rate-limit", 429, t.blockedUntil - this.now())
+      );
     const s = async () => {
       if (!t.credentials) throw U("auth");
       if (this.profile.auth === "basic") {
@@ -6801,13 +7052,19 @@ class _S {
       try {
         await this.verifyShared();
       } catch (r) {
-        if (!(r instanceof Pe) || r.failure.code !== "auth") throw r;
+        if (!(r instanceof Pe) || r.failure.code !== "auth")
+          throw r;
       }
-      const n = await this.json("api/auth/login", tu, {
-        method: "POST",
-        body: JSON.stringify(t.credentials),
-        headers: { "Content-Type": "application/json" }
-      }, !0);
+      const n = await this.json(
+        "api/auth/login",
+        tu,
+        {
+          method: "POST",
+          body: JSON.stringify(t.credentials),
+          headers: { "Content-Type": "application/json" }
+        },
+        !0
+      );
       return this.applyLogin(n);
     };
     return t.auth = s().finally(() => {
@@ -6819,14 +7076,21 @@ class _S {
     return t.memo.clear(), t.epoch++, "totp_required" in e ? (t.challenge = e.totp_token, { kind: "totp-required", challenge: e.totp_token }) : (delete t.challenge, t.credentials && (t.identity = t.credentials.username), t.authenticatedUntil = e.must_change_password ? 0 : this.now() + this.ttl, e.must_change_password ? { kind: "password-change-required" } : { kind: "authenticated", mustChangePassword: !1 });
   }
   async completeTotp(e, t, s = {}) {
-    if (this.alive(s.signal), this.scope.blockedUntil > this.now()) throw U("rate-limit", 429, this.scope.blockedUntil - this.now());
-    if (this.profile.auth !== "session" || e !== this.scope.challenge || !/^\d{6}$/.test(t)) throw U("totp");
+    if (this.alive(s.signal), this.scope.blockedUntil > this.now())
+      throw U("rate-limit", 429, this.scope.blockedUntil - this.now());
+    if (this.profile.auth !== "session" || e !== this.scope.challenge || !/^\d{6}$/.test(t))
+      throw U("totp");
     if (this.scope.auth) return this.wait(this.scope.auth, s.signal);
-    const n = this.json("api/auth/login/totp", tu, {
-      method: "POST",
-      body: JSON.stringify({ totp_token: e, code: t }),
-      headers: { "Content-Type": "application/json" }
-    }, !0).then((r) => this.applyLogin(r));
+    const n = this.json(
+      "api/auth/login/totp",
+      tu,
+      {
+        method: "POST",
+        body: JSON.stringify({ totp_token: e, code: t }),
+        headers: { "Content-Type": "application/json" }
+      },
+      !0
+    ).then((r) => this.applyLogin(r));
     return this.scope.auth = n.finally(() => {
       delete this.scope.auth;
     }), this.wait(this.scope.auth, s.signal);
@@ -6835,7 +7099,11 @@ class _S {
     const e = await this.json("api/auth/verify", ES, {}, !0), t = this.scope;
     if (t.requestedIdentity && t.requestedIdentity !== e.username || t.identity && t.identity !== e.username || t.credentials && t.credentials.username !== e.username)
       throw t.conflicted = !0, t.memo.clear(), t.controller.abort(), U("configuration");
-    return t.identity = e.username, { username: e.username, mustChangePassword: e.must_change_password ?? !1, ...e.role ? { role: e.role } : {} };
+    return t.identity = e.username, {
+      username: e.username,
+      mustChangePassword: e.must_change_password ?? !1,
+      ...e.role ? { role: e.role } : {}
+    };
   }
   async verify(e = {}) {
     return this.alive(e.signal), this.wait(this.verifyShared(), e.signal);
@@ -6847,7 +7115,10 @@ class _S {
       if (!this.profile.sameOrigin) throw U("configuration");
       const d = this.scope.credentials;
       if (!d) throw U("auth");
-      r.set("Authorization", gS(d.username, d.password));
+      r.set(
+        "Authorization",
+        gS(d.username, d.password)
+      );
     }
     const o = new AbortController(), a = [o.signal, this.scope.controller.signal];
     s || a.push(this.lifetime.signal), t.signal && a.push(t.signal);
@@ -6878,21 +7149,24 @@ class _S {
       const g = () => {
         u(), l.removeEventListener("abort", p);
       };
-      return new Response(new ReadableStream({
-        async pull(m) {
-          try {
-            const y = await f.read();
-            if (l.aborted) throw h();
-            y.done ? (g(), m.close()) : m.enqueue(y.value);
-          } catch {
-            g(), m.error(l.aborted ? h() : U("network"));
+      return new Response(
+        new ReadableStream({
+          async pull(m) {
+            try {
+              const y = await f.read();
+              if (l.aborted) throw h();
+              y.done ? (g(), m.close()) : m.enqueue(y.value);
+            } catch {
+              g(), m.error(l.aborted ? h() : U("network"));
+            }
+          },
+          async cancel() {
+            g(), await f.cancel().catch(() => {
+            });
           }
-        },
-        async cancel() {
-          g(), await f.cancel().catch(() => {
-          });
-        }
-      }), { status: d.status, statusText: "", headers: d.headers });
+        }),
+        { status: d.status, statusText: "", headers: d.headers }
+      );
     } catch (d) {
       throw u(), l.aborted ? h() : d instanceof Pe ? d : U("network");
     }
@@ -6901,7 +7175,9 @@ class _S {
     if (e.ok) return e;
     const s = e.status;
     (s === 401 || s === 403) && this.scope.memo.clear();
-    const n = new URL(this.profile.go2rtcUrl).pathname.slice(new URL(this.profile.baseUrl).pathname.length);
+    const n = new URL(this.profile.go2rtcUrl).pathname.slice(
+      new URL(this.profile.baseUrl).pathname.length
+    );
     if (s >= 500 && t.startsWith(n) && !/text\/html/i.test(e.headers.get("Content-Type") ?? "")) {
       const r = e.body?.getReader();
       let o = "", a = 0;
@@ -6917,14 +7193,23 @@ class _S {
         await r?.cancel().catch(() => {
         });
       }
-      if (/dial tcp|no route to host|connection refused|connect: network is unreachable/i.test(o)) throw U("source-offline", s);
+      if (/dial tcp|no route to host|connection refused|connect: network is unreachable/i.test(
+        o
+      ))
+        throw U("source-offline", s);
     } else await e.body?.cancel().catch(() => {
     });
     if (s === 429) {
-      const r = e.headers.get("Retry-After"), o = r === null ? NaN : Number(r), a = Number.isFinite(o) ? o * 1e3 : r ? Date.parse(r) - this.now() : 3e4, l = Math.max(1e3, Math.min(Number.isFinite(a) ? a : 3e4, 3e5));
+      const r = e.headers.get("Retry-After"), o = r === null ? NaN : Number(r), a = Number.isFinite(o) ? o * 1e3 : r ? Date.parse(r) - this.now() : 3e4, l = Math.max(
+        1e3,
+        Math.min(Number.isFinite(a) ? a : 3e4, 3e5)
+      );
       throw this.scope.blockedUntil = this.now() + l, U("rate-limit", s, l);
     }
-    throw U(s === 401 ? "auth" : s === 403 ? "policy" : s === 423 ? "auth" : s === 404 || s === 405 ? "unsupported-api" : s >= 500 ? "proxy" : "unsupported-api", s);
+    throw U(
+      s === 401 ? "auth" : s === 403 ? "policy" : s === 423 ? "auth" : s === 404 || s === 405 ? "unsupported-api" : s >= 500 ? "proxy" : "unsupported-api",
+      s
+    );
   }
   async request(e, t = {}, s = !1) {
     const n = this.scope.epoch;
@@ -6932,8 +7217,14 @@ class _S {
     if (r.status === 401 && this.scope.credentials && !this.scope.challenge && (t.method ?? "GET") === "GET") {
       if (await r.body?.cancel().catch(() => {
       }), n === this.scope.epoch) {
-        const o = await this.wait(this.authenticate(!0), t.signal ?? void 0);
-        if (o.kind !== "authenticated") throw U(o.kind === "totp-required" ? "totp" : "password-change");
+        const o = await this.wait(
+          this.authenticate(!0),
+          t.signal ?? void 0
+        );
+        if (o.kind !== "authenticated")
+          throw U(
+            o.kind === "totp-required" ? "totp" : "password-change"
+          );
       }
       r = await this.raw(e, t, s);
     }
@@ -6941,7 +7232,9 @@ class _S {
   }
   async json(e, t, s = {}, n = !1, r = !0) {
     const o = n ? await this.check(await this.raw(e, s, !0)) : await this.request(e, s, r);
-    if (!/^application\/json(?:\s*;|$)/i.test(o.headers.get("Content-Type") ?? ""))
+    if (!/^application\/json(?:\s*;|$)/i.test(
+      o.headers.get("Content-Type") ?? ""
+    ))
       throw await o.body?.cancel().catch(() => {
       }), U("unsupported-api", o.status);
     try {
@@ -6959,55 +7252,115 @@ class _S {
     const n = this.scope.memo.get(e);
     if (n && n.expires > this.now()) return n.value;
     const r = this.scope.epoch, o = await this.wait(t(), s.signal);
-    return this.alive(s.signal), r === this.scope.epoch && this.scope.memo.set(e, { value: cf(o), expires: this.now() + this.ttl }), o;
+    return this.alive(s.signal), r === this.scope.epoch && this.scope.memo.set(e, {
+      value: cf(o),
+      expires: this.now() + this.ttl
+    }), o;
   }
   discover(e = {}) {
-    return this.cached("inventory", async () => {
-      const t = [], s = /* @__PURE__ */ new Set();
-      let n = 1;
-      for (let r = 1; r <= n; r++) {
-        this.alive(e.signal);
-        const o = new URLSearchParams({ summary: "true", surface: "live", page: String(r), page_size: "100", sort_by: "name", sort_order: "asc", availability: "all" }), a = await this.json(`api/streams?${o}`, cS, e.signal ? { signal: e.signal } : {}, !1, !1);
-        if (a.page !== r || a.total_pages > 1e4 || a.total_pages === 0 && a.streams.length !== 0) throw U("unsupported-api");
-        if (r === 1) n = a.total_pages;
-        else if (a.total_pages !== n) throw U("unsupported-api");
-        for (const l of a.streams) {
-          if (s.has(l.name)) throw U("unsupported-api");
-          s.add(l.name), t.push(yS(l));
+    return this.cached(
+      "inventory",
+      async () => {
+        const t = [], s = /* @__PURE__ */ new Set();
+        let n = 1;
+        for (let r = 1; r <= n; r++) {
+          this.alive(e.signal);
+          const o = new URLSearchParams({
+            summary: "true",
+            surface: "live",
+            page: String(r),
+            page_size: "100",
+            sort_by: "name",
+            sort_order: "asc",
+            availability: "all"
+          }), a = await this.json(
+            `api/streams?${o}`,
+            cS,
+            e.signal ? { signal: e.signal } : {},
+            !1,
+            !1
+          );
+          if (a.page !== r || a.total_pages > 1e4 || a.total_pages === 0 && a.streams.length !== 0)
+            throw U("unsupported-api");
+          if (r === 1) n = a.total_pages;
+          else if (a.total_pages !== n) throw U("unsupported-api");
+          for (const l of a.streams) {
+            if (s.has(l.name)) throw U("unsupported-api");
+            s.add(l.name), t.push(yS(l));
+          }
         }
-      }
-      return t;
-    }, e);
+        return t;
+      },
+      e
+    );
   }
   clientConfig(e = {}) {
-    return this.cached("config", async () => {
-      const t = await this.json("api/client-config", bS, e.signal ? { signal: e.signal } : {}, !1, !1), s = t.go2rtc_enabled === !1 || t.go2rtc_available === !1 ? "denied" : t.go2rtc_enabled === !0 && t.go2rtc_available === !0 ? "allowed" : "unknown", n = (o) => o === void 0 ? "unknown" : sr(!o), r = lf(t.default_playback_transport);
-      return {
-        go2rtc: s,
-        forceNativeHls: t.go2rtc_force_native_hls ?? "unknown",
-        audioDisabled: t.audio_disabled ?? "unknown",
-        transports: { webrtc: s === "denied" ? "denied" : n(t.webrtc_disabled), mse: s === "denied" ? "denied" : n(t.mse_disabled), hls: n(t.hls_disabled) },
-        ...r ? { defaultTransport: r } : {},
-        ...t.webrtc_connection_timeout_ms === void 0 ? {} : { connectionTimeoutMs: t.webrtc_connection_timeout_ms },
-        ...t.webrtc_ice_recovery_timeout_ms === void 0 ? {} : { iceRecoveryMs: t.webrtc_ice_recovery_timeout_ms }
-      };
-    }, e);
+    return this.cached(
+      "config",
+      async () => {
+        const t = await this.json(
+          "api/client-config",
+          bS,
+          e.signal ? { signal: e.signal } : {},
+          !1,
+          !1
+        ), s = t.go2rtc_enabled === !1 || t.go2rtc_available === !1 ? "denied" : t.go2rtc_enabled === !0 && t.go2rtc_available === !0 ? "allowed" : "unknown", n = (o) => o === void 0 ? "unknown" : sr(!o), r = lf(t.default_playback_transport);
+        return {
+          go2rtc: s,
+          forceNativeHls: t.go2rtc_force_native_hls ?? "unknown",
+          audioDisabled: t.audio_disabled ?? "unknown",
+          transports: {
+            webrtc: s === "denied" ? "denied" : n(t.webrtc_disabled),
+            mse: s === "denied" ? "denied" : n(t.mse_disabled),
+            hls: n(t.hls_disabled)
+          },
+          ...r ? { defaultTransport: r } : {},
+          ...t.webrtc_connection_timeout_ms === void 0 ? {} : { connectionTimeoutMs: t.webrtc_connection_timeout_ms },
+          ...t.webrtc_ice_recovery_timeout_ms === void 0 ? {} : { iceRecoveryMs: t.webrtc_ice_recovery_timeout_ms }
+        };
+      },
+      e
+    );
   }
   async iceServers(e = {}) {
     this.alive(e.signal);
-    const t = await this.json("api/ice-servers", SS, e.signal ? { signal: e.signal } : {}, !1, !1);
-    if (t.ice_servers.some((s) => (Array.isArray(s.urls) ? s.urls : [s.urls]).some((n) => !/^(stun|stuns|turn|turns):[^\s]+$/.test(n)))) throw U("unsupported-api");
-    return t.ice_servers.map((s) => ({ urls: s.urls, ...s.username === void 0 ? {} : { username: s.username }, ...s.credential === void 0 ? {} : { credential: s.credential } }));
+    const t = await this.json(
+      "api/ice-servers",
+      SS,
+      e.signal ? { signal: e.signal } : {},
+      !1,
+      !1
+    );
+    if (t.ice_servers.some(
+      (s) => (Array.isArray(s.urls) ? s.urls : [s.urls]).some(
+        (n) => !/^(stun|stuns|turn|turns):[^\s]+$/.test(n)
+      )
+    ))
+      throw U("unsupported-api");
+    return t.ice_servers.map((s) => ({
+      urls: s.urls,
+      ...s.username === void 0 ? {} : { username: s.username },
+      ...s.credential === void 0 ? {} : { credential: s.credential }
+    }));
   }
   async authorizedFetch(e, t = {}) {
-    const n = iu(this.profile, e).pathname.slice(new URL(this.profile.baseUrl).pathname.length), r = new URL(this.profile.go2rtcUrl).pathname.slice(new URL(this.profile.baseUrl).pathname.length), o = n.slice(r.length);
-    if (!(n.startsWith(r) && (/^api\/(webrtc|frame\.jpeg|stream\.m3u8)$/.test(o) || /^api\/hls\/(playlist\.m3u8|init\.mp4|segment\.ts|segment\.m4s)$/.test(o))) && !/^hls\/[a-zA-Z0-9_%.-]+\/[a-zA-Z0-9_.-]+$/.test(n)) throw U("configuration");
+    const n = iu(this.profile, e).pathname.slice(
+      new URL(this.profile.baseUrl).pathname.length
+    ), r = new URL(this.profile.go2rtcUrl).pathname.slice(
+      new URL(this.profile.baseUrl).pathname.length
+    ), o = n.slice(r.length);
+    if (!(n.startsWith(r) && (/^api\/(webrtc|frame\.jpeg|stream\.m3u8)$/.test(o) || /^api\/hls\/(playlist\.m3u8|init\.mp4|segment\.ts|segment\.m4s)$/.test(
+      o
+    ))) && !/^hls\/[a-zA-Z0-9_%.-]+\/[a-zA-Z0-9_.-]+$/.test(n))
+      throw U("configuration");
     const l = t.method ?? "GET";
-    if (l !== "GET" && !(o === "api/webrtc" && l === "POST")) throw U("configuration");
+    if (l !== "GET" && !(o === "api/webrtc" && l === "POST"))
+      throw U("configuration");
     return this.request(e, t);
   }
   mediaUrls(e, t) {
-    if (this.alive(), !e.source || Yr(e.source)) throw U("configuration");
+    if (this.alive(), !e.source || Yr(e.source))
+      throw U("configuration");
     const s = new URLSearchParams({ src: e.source }), n = (a) => new URL(a, this.profile.go2rtcUrl).href + "?" + s, r = new URL(n("api/ws"));
     r.protocol = r.protocol === "https:" ? "wss:" : "ws:";
     const o = new URL(n("api/stream.m3u8"));
@@ -7016,23 +7369,67 @@ class _S {
       mse: r.href,
       go2rtcHls: o.href,
       snapshot: n("api/frame.jpeg"),
-      ...t && e.camera && e.profile === "main" && e.source === e.camera ? { nativeHls: new URL(`hls/${encodeURIComponent(e.camera)}/index.m3u8`, this.profile.baseUrl).href } : {}
+      ...t && e.camera && e.profile === "main" && e.source === e.camera ? {
+        nativeHls: new URL(
+          `hls/${encodeURIComponent(e.camera)}/index.m3u8`,
+          this.profile.baseUrl
+        ).href
+      } : {}
     };
   }
   async readControl(e, t, s = {}) {
     this.alive(s.signal);
     const n = Eo(e), r = s.signal ? { signal: s.signal } : {};
     if (t === "recording")
-      return { recording: (await this.json(`${n}/recording`, Ee({ recording_active: he() }), r, !1, !1)).recording_active };
+      return { recording: (await this.json(
+        `${n}/recording`,
+        Ee({ recording_active: he() }),
+        r,
+        !1,
+        !1
+      )).recording_active };
     if (t === "privacy")
-      return { privacy: (await this.json(n, Ee({ privacy_mode: he() }), r, !1, !1)).privacy_mode };
+      return { privacy: (await this.json(
+        n,
+        Ee({ privacy_mode: he() }),
+        r,
+        !1,
+        !1
+      )).privacy_mode };
     if (t === "daynight") {
-      const o = await this.json(`${n}/daynight`, Ee({ mode: St(["auto", "day", "night", "unknown"]) }), r, !1, !1);
+      const o = await this.json(
+        `${n}/daynight`,
+        Ee({ mode: St(["auto", "day", "night", "unknown"]) }),
+        r,
+        !1,
+        !1
+      );
       return o.mode === "unknown" ? {} : { daynight: o.mode };
     }
     if (t === "ptz") {
-      const o = await this.json(`${n}/ptz/capabilities`, Ee({ has_pan_tilt: he(), has_zoom: he() }), r, !1, !1), a = await this.json(`${n}/ptz/presets`, Ee({ presets: Wt(Ee({ token: me(), name: me() })) }), r, !1, !1);
-      return { ptz: { pan: o.has_pan_tilt, tilt: o.has_pan_tilt, zoom: o.has_zoom }, presets: a.presets.map((l) => ({ id: l.token, name: l.name })) };
+      const o = await this.json(
+        `${n}/ptz/capabilities`,
+        Ee({ has_pan_tilt: he(), has_zoom: he() }),
+        r,
+        !1,
+        !1
+      ), a = await this.json(
+        `${n}/ptz/presets`,
+        Ee({
+          presets: Wt(Ee({ token: me(), name: me() }))
+        }),
+        r,
+        !1,
+        !1
+      );
+      return {
+        ptz: {
+          pan: o.has_pan_tilt,
+          tilt: o.has_pan_tilt,
+          zoom: o.has_zoom
+        },
+        presets: a.presets.map((l) => ({ id: l.token, name: l.name }))
+      };
     }
     throw U("unsupported-api");
   }
@@ -7055,29 +7452,46 @@ class _S {
       case "ptz":
         if (["move", "absolute", "relative"].includes(t.command) && "axes" in t) {
           if (t.axes.speed !== void 0) throw U("configuration");
-          const u = { pan: t.axes.x, tilt: t.axes.y, zoom: t.axes.z }, h = Object.values(u).filter((d) => d !== void 0);
-          if (!h.length || h.some((d) => !Number.isFinite(d) || Math.abs(d) > 34028234663852886e22)) throw U("configuration");
+          const u = {
+            pan: t.axes.x,
+            tilt: t.axes.y,
+            zoom: t.axes.z
+          }, h = Object.values(u).filter((d) => d !== void 0);
+          if (!h.length || h.some(
+            (d) => !Number.isFinite(d) || Math.abs(d) > 34028234663852886e22
+          ))
+            throw U("configuration");
           r += `/ptz/${t.command}`, o = u;
         } else if (t.command === "goto-preset" || t.command === "save-preset") {
-          if (!t.preset || t.preset.length > 63) throw U("configuration");
+          if (!t.preset || t.preset.length > 63)
+            throw U("configuration");
           const u = t.command === "save-preset";
           r += u ? "/ptz/preset" : "/ptz/goto-preset", a = u ? "PUT" : "POST", o = u ? { name: t.preset } : { token: t.preset };
-        } else if (["stop", "home", "set-home"].includes(t.command)) r += `/ptz/${t.command}`;
+        } else if (["stop", "home", "set-home"].includes(t.command))
+          r += `/ptz/${t.command}`;
         else throw U("configuration");
         break;
       default:
         throw U("configuration");
     }
-    const c = await this.request(r, { method: a, headers: { "Content-Type": "application/json" }, body: JSON.stringify(o), ...s.signal ? { signal: s.signal } : {} });
+    const c = await this.request(r, {
+      method: a,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(o),
+      ...s.signal ? { signal: s.signal } : {}
+    });
     if (c.status !== l)
       throw await c.body?.cancel().catch(() => {
       }), U("unsupported-api", c.status);
-    if (!/^application\/json(?:\s*;|$)/i.test(c.headers.get("Content-Type") ?? ""))
+    if (!/^application\/json(?:\s*;|$)/i.test(
+      c.headers.get("Content-Type") ?? ""
+    ))
       throw await c.body?.cancel().catch(() => {
       }), U("unsupported-api", c.status);
     try {
       const u = await c.json();
-      if (!vS.safeParse(u).success) throw U("unsupported-api", c.status);
+      if (!vS.safeParse(u).success)
+        throw U("unsupported-api", c.status);
     } catch (u) {
       throw u instanceof Pe ? u : U("unsupported-api", c.status);
     }
@@ -7090,7 +7504,14 @@ class _S {
       t.signal ? { signal: t.signal } : {},
       !1,
       !1
-    )).detections.map((n) => ({ x: n.x, y: n.y, width: n.width, height: n.height, label: n.label, ...n.confidence === void 0 ? {} : { confidence: n.confidence } }));
+    )).detections.map((n) => ({
+      x: n.x,
+      y: n.y,
+      width: n.width,
+      height: n.height,
+      label: n.label,
+      ...n.confidence === void 0 ? {} : { confidence: n.confidence }
+    }));
   }
   dispose() {
     this.disposed || (this.disposed = !0, this.lifetime.abort(), this.release());
@@ -7112,15 +7533,17 @@ function IS(i, e, t = 3e4) {
       p !== -1 && n.queue.splice(p, 1);
     }, h = (p = !1) => {
       a || (a = !0, u(), c(), o(U(p ? "timeout" : "cancelled")));
-    }, d = () => h(), f = { grant: () => {
-      if (a) return;
-      a = !0, u(), n.active++;
-      let p = !1;
-      const g = () => {
-        p || (p = !0, e.removeEventListener("abort", g), n.active--, n.queue[0]?.grant(), c());
-      };
-      e.addEventListener("abort", g, { once: !0 }), r(g);
-    } };
+    }, d = () => h(), f = {
+      grant: () => {
+        if (a) return;
+        a = !0, u(), n.active++;
+        let p = !1;
+        const g = () => {
+          p || (p = !0, e.removeEventListener("abort", g), n.active--, n.queue[0]?.grant(), c());
+        };
+        e.addEventListener("abort", g, { once: !0 }), r(g);
+      }
+    };
     e.addEventListener("abort", d, { once: !0 }), n.active < 2 && !n.queue.length ? f.grant() : (n.queue.push(f), l = setTimeout(() => h(!0), t));
   });
 }
@@ -31877,11 +32300,14 @@ const Ax = 1e3, us = (i) => {
 function Yo(i, e = Ax) {
   return new Promise((t) => {
     const s = setTimeout(t, e);
-    i.then(() => {
-      clearTimeout(s), t();
-    }, () => {
-      clearTimeout(s), t();
-    });
+    i.then(
+      () => {
+        clearTimeout(s), t();
+      },
+      () => {
+        clearTimeout(s), t();
+      }
+    );
   });
 }
 function Zs(i, e) {
@@ -31889,15 +32315,27 @@ function Zs(i, e) {
     const n = () => {
       e.removeEventListener("abort", n), s(U("cancelled"));
     };
-    e.addEventListener("abort", n, { once: !0 }), i.then((r) => {
-      e.removeEventListener("abort", n), t(r);
-    }, (r) => {
-      e.removeEventListener("abort", n), s(r);
-    }), e.aborted && n();
+    e.addEventListener("abort", n, { once: !0 }), i.then(
+      (r) => {
+        e.removeEventListener("abort", n), t(r);
+      },
+      (r) => {
+        e.removeEventListener("abort", n), s(r);
+      }
+    ), e.aborted && n();
   });
 }
-function _x({ client: i, createTransport: e, talk: t }) {
-  let s = Object.freeze({ state: "idle", attempt: 0, talking: !1, talk: Object.freeze({ active: !1, pending: !1 }) });
+function _x({
+  client: i,
+  createTransport: e,
+  talk: t
+}) {
+  let s = Object.freeze({
+    state: "idle",
+    attempt: 0,
+    talking: !1,
+    talk: Object.freeze({ active: !1, pending: !1 })
+  });
   const n = /* @__PURE__ */ new Set();
   let r, o, a = "", l = 0, c, u = !1, h = !1, d = !0, f = !1, p = 0, g = 0, m, y, E, b = [], T, S, A = Promise.resolve(), _;
   const I = globalThis.document, x = () => !!r && (!d && r.playback_visibility.offscreen === "pause" || I?.hidden && r.playback_visibility.hidden === "pause"), w = (C) => {
@@ -31909,7 +32347,10 @@ function _x({ client: i, createTransport: e, talk: t }) {
       } catch {
       }
   }, R = (C) => {
-    const F = Object.freeze({ ...C, ...C.failure ? { failure: Object.freeze({ ...C.failure }) } : {} });
+    const F = Object.freeze({
+      ...C,
+      ...C.failure ? { failure: Object.freeze({ ...C.failure }) } : {}
+    });
     w({ talk: F, talking: F.active });
   }, k = t.subscribe(R), N = (C) => !u && h && c === C && C.generation === l && !C.abort.signal.aborted, z = (C) => {
     clearTimeout(C.deadline), delete C.deadline;
@@ -31929,8 +32370,10 @@ function _x({ client: i, createTransport: e, talk: t }) {
     }, F);
   };
   function K(C) {
-    if (C.status === 401 || ["auth", "password-change", "totp"].includes(C.code)) return "auth-required";
-    if (C.status === 403 || ["policy", "privacy"].includes(C.code)) return "denied";
+    if (C.status === 401 || ["auth", "password-change", "totp"].includes(C.code))
+      return "auth-required";
+    if (C.status === 403 || ["policy", "privacy"].includes(C.code))
+      return "denied";
     if (C.code === "configuration") return "failed";
     if (C.code === "cancelled") return "stopped";
   }
@@ -31943,7 +32386,10 @@ function _x({ client: i, createTransport: e, talk: t }) {
     }
     C.failed = !0;
     const _e = K(Z), Be = !_e && Z.code !== "source-offline" && Z.code !== "rate-limit" && g + 1 < b.length, ke = l, Ie = O();
-    if (w({ state: _e ?? (Z.code === "source-offline" ? "offline" : "recovering"), failure: Z }), await Ie, ke !== l || !h || u || _e || Z.code === "cancelled") return;
+    if (w({
+      state: _e ?? (Z.code === "source-offline" ? "offline" : "recovering"),
+      failure: Z
+    }), await Ie, ke !== l || !h || u || _e || Z.code === "cancelled") return;
     if (Be) {
       g++, j(ke);
       return;
@@ -31952,7 +32398,19 @@ function _x({ client: i, createTransport: e, talk: t }) {
       w({ state: Z.code === "source-offline" ? "offline" : "failed" });
       return;
     }
-    const { base_ms: bt, cap_ms: se, jitter: ae } = r.retry, ue = Math.min(se, bt * 2 ** p++), Ue = Math.max(100, Math.min(3e5, Math.max(Z.retryAfterMs ?? 0, Math.min(se, ue * (1 + ae * (2 * Math.random() - 1))))));
+    const { base_ms: bt, cap_ms: se, jitter: ae } = r.retry, ue = Math.min(se, bt * 2 ** p++), Ue = Math.max(
+      100,
+      Math.min(
+        3e5,
+        Math.max(
+          Z.retryAfterMs ?? 0,
+          Math.min(
+            se,
+            ue * (1 + ae * (2 * Math.random() - 1))
+          )
+        )
+      )
+    );
     Z.code !== "source-offline" && Z.code !== "rate-limit" && (g = 0), T = setTimeout(() => {
       T = void 0, j(ke);
     }, Ue);
@@ -31964,7 +32422,8 @@ function _x({ client: i, createTransport: e, talk: t }) {
         return;
       }
       if (F.type === "first-frame" && F.transport === C.adapter?.kind) {
-        if (C.rendered = !0, s.failure?.code === "autoplay" && s.state === "suspended") return;
+        if (C.rendered = !0, s.failure?.code === "autoplay" && s.state === "suspended")
+          return;
         z(C), B(C), p = 0, C.autoplay = !1, w({ state: "playing", failure: void 0 });
       } else F.type === "state" && F.state === "recovering" && s.state === "playing" ? (us(() => t.stop()), w({ state: "recovering" }), $(C, P(C.adapter?.kind))) : F.type === "state" && F.state === "playing" && C.rendered && !C.autoplay && (z(C), w({ state: "playing", failure: void 0 }));
     }
@@ -31975,29 +32434,68 @@ function _x({ client: i, createTransport: e, talk: t }) {
       w({ state: "suspended" });
       return;
     }
-    const F = { generation: C, abort: new AbortController(), failed: !1, rendered: !1, autoplay: !1, playRevision: 0 };
+    const F = {
+      generation: C,
+      abort: new AbortController(),
+      failed: !1,
+      rendered: !1,
+      autoplay: !1,
+      playRevision: 0
+    };
     c = F, w({ state: "queued", attempt: s.attempt + 1 });
     try {
-      if (F.release = await IS(i.profile.sessionScope, F.abort.signal), !N(F)) {
+      if (F.release = await IS(
+        i.profile.sessionScope,
+        F.abort.signal
+      ), !N(F)) {
         B(F);
         return;
       }
       w({ state: "connecting" }), $(F, P(b[g]));
-      const Z = F.abort.signal, _e = await Zs(i.connect(void 0, { signal: Z }), Z);
+      const Z = F.abort.signal, _e = await Zs(
+        i.connect(void 0, { signal: Z }),
+        Z
+      );
       if (!N(F)) return;
       if (_e.kind === "totp-required") throw U("totp");
-      if (_e.kind === "password-change-required" || _e.mustChangePassword) throw U("password-change");
-      const [Be, ke] = await Zs(Promise.all([i.discover({ signal: Z }), i.clientConfig({ signal: Z })]), Z);
+      if (_e.kind === "password-change-required" || _e.mustChangePassword)
+        throw U("password-change");
+      const [Be, ke] = await Zs(
+        Promise.all([
+          i.discover({ signal: Z }),
+          i.clientConfig({ signal: Z })
+        ]),
+        Z
+      );
       if (!N(F)) return;
       if (m = ke, E = dl(r, Be), y = Be.find((se) => se.name === E?.camera), y?.privacy === !0) throw U("privacy");
-      if (y?.capabilities["live.view"] === "denied") throw U("policy");
-      if (y?.status === "offline" || y?.status === "disabled") throw U("source-offline");
-      b = r.transports.filter((se) => Tx(se, ke, i, o));
+      if (y?.capabilities["live.view"] === "denied")
+        throw U("policy");
+      if (y?.status === "offline" || y?.status === "disabled")
+        throw U("source-offline");
+      b = r.transports.filter(
+        (se) => Tx(se, ke, i, o)
+      );
       const Ie = b[g];
       if (!Ie) throw U("unsupported-api");
       F.adapter = e(Ie), w({ transport: Ie }), $(F, P(Ie));
-      const bt = { ...r, audio: { ...r.audio, muted: !f } };
-      await Zs(F.adapter.start({ video: o, config: bt, source: E, ...y ? { camera: y } : {}, capabilities: ke, client: i, signal: Z, emit: (se) => G(F, se) }), Z);
+      const bt = {
+        ...r,
+        audio: { ...r.audio, muted: !f }
+      };
+      await Zs(
+        F.adapter.start({
+          video: o,
+          config: bt,
+          source: E,
+          ...y ? { camera: y } : {},
+          capabilities: ke,
+          client: i,
+          signal: Z,
+          emit: (se) => G(F, se)
+        }),
+        Z
+      );
     } catch (Z) {
       N(F) && await W(F, qt(Z));
     }
@@ -32014,7 +32512,12 @@ function _x({ client: i, createTransport: e, talk: t }) {
     try {
       await Zs(o.play(), C.abort.signal), N(C) && C.playRevision === F && C.rendered && !o.paused && (C.autoplay = !1, z(C), B(C), w({ state: "playing", failure: void 0 }));
     } catch (Z) {
-      N(C) && C.playRevision === F && await W(C, U(Z instanceof Error && Z.name === "NotAllowedError" ? "autoplay" : "network").failure);
+      N(C) && C.playRevision === F && await W(
+        C,
+        U(
+          Z instanceof Error && Z.name === "NotAllowedError" ? "autoplay" : "network"
+        ).failure
+      );
     }
   }
   const le = async () => {
@@ -32040,7 +32543,8 @@ function _x({ client: i, createTransport: e, talk: t }) {
     start(C, F, Z) {
       if (u) return Promise.resolve();
       const _e = JSON.stringify(Vs(F));
-      if (h && C === o && _e === a && !Z?.aborted) return Promise.resolve();
+      if (h && C === o && _e === a && !Z?.aborted)
+        return Promise.resolve();
       if (S?.(), S = void 0, o = C, r = Vs(F), a = _e, h = !0, Z) {
         const Be = () => {
           le();
@@ -32054,7 +32558,8 @@ function _x({ client: i, createTransport: e, talk: t }) {
     },
     async setListening(C) {
       if (!r || u) return;
-      if (C && (!r.audio.enabled || !r.audio.listen || m?.audioDisabled === !0 || y?.capabilities["audio.listen"] === "denied")) throw U("policy");
+      if (C && (!r.audio.enabled || !r.audio.listen || m?.audioDisabled === !0 || y?.capabilities["audio.listen"] === "denied"))
+        throw U("policy");
       f = C;
       const F = c;
       if (!F?.adapter || !N(F)) return;
@@ -32072,7 +32577,8 @@ function _x({ client: i, createTransport: e, talk: t }) {
     },
     async startTalk(C) {
       const F = c, Z = F?.adapter?.getAudioSender?.();
-      if (!F || !N(F) || !d || I?.hidden || s.state !== "playing" || !Z || !r?.audio.enabled || !r.audio.microphone || m?.audioDisabled === !0 || y?.capabilities["audio.talk"] === "denied" || y?.backchannel === "denied") throw U("policy");
+      if (!F || !N(F) || !d || I?.hidden || s.state !== "playing" || !Z || !r?.audio.enabled || !r.audio.microphone || m?.audioDisabled === !0 || y?.capabilities["audio.talk"] === "denied" || y?.backchannel === "denied")
+        throw U("policy");
       await Zs(t.start(Z, C), F.abort.signal);
     },
     stopTalk: () => Yo(us(() => t.stop())),
@@ -32110,7 +32616,14 @@ function Ix(i, e) {
     s = t.createMediaStreamSource(i), n = t.createAnalyser(), n.fftSize = 256, s.connect(n);
     const a = new Uint8Array(n.fftSize);
     return r = setInterval(() => {
-      n.getByteTimeDomainData(a), e(Math.min(1, Math.sqrt(a.reduce((l, c) => l + ((c - 128) / 128) ** 2, 0) / a.length)));
+      n.getByteTimeDomainData(a), e(
+        Math.min(
+          1,
+          Math.sqrt(
+            a.reduce((l, c) => l + ((c - 128) / 128) ** 2, 0) / a.length
+          )
+        )
+      );
     }, 100), o;
   } catch {
     return o(), () => {
@@ -32137,9 +32650,15 @@ function wx(i, e) {
 }
 const Ui = (i, e) => new Pe({ code: i, message: e }), $h = () => Ui("cancelled", "Microphone request cancelled.");
 function xx(i = {}) {
-  let e = Object.freeze({ active: !1, pending: !1 }), t, s = !1, n = 0, r = Promise.resolve();
+  let e = Object.freeze({
+    active: !1,
+    pending: !1
+  }), t, s = !1, n = 0, r = Promise.resolve();
   const o = /* @__PURE__ */ new Set(), a = /* @__PURE__ */ new WeakMap(), l = (f) => {
-    e = Object.freeze({ ...f, ...f.failure ? { failure: Object.freeze({ ...f.failure }) } : {} });
+    e = Object.freeze({
+      ...f,
+      ...f.failure ? { failure: Object.freeze({ ...f.failure }) } : {}
+    });
     for (const p of [...o])
       try {
         p(e);
@@ -32147,8 +32666,11 @@ function xx(i = {}) {
       }
   }, c = (f, p) => {
     const g = (a.get(f) ?? Promise.resolve()).then(p);
-    return a.set(f, g.catch(() => {
-    })), g;
+    return a.set(
+      f,
+      g.catch(() => {
+      })
+    ), g;
   }, u = (f) => t === f && !f.cancel.signal.aborted && Fa(f.sender);
   function h() {
     const f = ++n, p = t;
@@ -32161,8 +32683,18 @@ function xx(i = {}) {
       if (p.stream?.getTracks().forEach((g) => {
         g.enabled = !1, g.stop();
       }), p.attached) {
-        const g = c(p.sender, () => p.sender.replaceTrack(null)).catch(() => {
-          n === f && !t && !s && l({ active: !1, pending: !1, failure: { code: "ice", message: "Microphone sender could not detach; local capture has stopped." } });
+        const g = c(
+          p.sender,
+          () => p.sender.replaceTrack(null)
+        ).catch(() => {
+          n === f && !t && !s && l({
+            active: !1,
+            pending: !1,
+            failure: {
+              code: "ice",
+              message: "Microphone sender could not detach; local capture has stopped."
+            }
+          });
         });
         r = Promise.all([r, g]).then(() => {
         });
@@ -32172,37 +32704,86 @@ function xx(i = {}) {
   }
   async function d(f, p) {
     if (h(), s || p.aborted) return;
-    const g = { sender: f, cancel: new AbortController(), cleanup: [], attached: !1 };
+    const g = {
+      sender: f,
+      cancel: new AbortController(),
+      cleanup: [],
+      attached: !1
+    };
     t = g;
     const m = () => {
       t === g && h();
     };
-    p.addEventListener("abort", m, { once: !0 }), g.cleanup.push(() => p.removeEventListener("abort", m), wx(f, m)), l({ active: !1, pending: !0 });
+    p.addEventListener("abort", m, { once: !0 }), g.cleanup.push(
+      () => p.removeEventListener("abort", m),
+      wx(f, m)
+    ), l({ active: !1, pending: !0 });
     try {
-      if (!(i.isSecureContext?.() ?? globalThis.isSecureContext)) throw Ui("configuration", "Microphone requires a secure Home Assistant document context (trusted HTTPS or localhost).");
-      if (!Fa(f)) throw Ui("ice", "The negotiated microphone sender is no longer available.");
-      const y = i.getUserMedia ?? globalThis.navigator?.mediaDevices?.getUserMedia.bind(globalThis.navigator.mediaDevices);
+      if (!(i.isSecureContext?.() ?? globalThis.isSecureContext))
+        throw Ui(
+          "configuration",
+          "Microphone requires a secure Home Assistant document context (trusted HTTPS or localhost)."
+        );
+      if (!Fa(f))
+        throw Ui(
+          "ice",
+          "The negotiated microphone sender is no longer available."
+        );
+      const y = i.getUserMedia ?? globalThis.navigator?.mediaDevices?.getUserMedia.bind(
+        globalThis.navigator.mediaDevices
+      );
       if (!u(g)) return;
-      if (!y) throw Ui("unsupported-api", "Microphone capture is unavailable in this browser.");
-      const E = y({ audio: { echoCancellation: !0, noiseSuppression: !0, autoGainControl: !0 }, video: !1 }).then((I) => {
+      if (!y)
+        throw Ui(
+          "unsupported-api",
+          "Microphone capture is unavailable in this browser."
+        );
+      const E = y({
+        audio: {
+          echoCancellation: !0,
+          noiseSuppression: !0,
+          autoGainControl: !0
+        },
+        video: !1
+      }).then((I) => {
         if (!u(g))
           throw I.getTracks().forEach((x) => x.stop()), $h();
         return g.stream = I, I;
       }), b = new Promise((I, x) => {
         const w = () => x($h());
-        g.cancel.signal.addEventListener("abort", w, { once: !0 }), g.cleanup.push(() => g.cancel.signal.removeEventListener("abort", w)), g.cancel.signal.aborted && w();
+        g.cancel.signal.addEventListener("abort", w, { once: !0 }), g.cleanup.push(
+          () => g.cancel.signal.removeEventListener("abort", w)
+        ), g.cancel.signal.aborted && w();
       }), T = await Promise.race([E, b]), S = T.getAudioTracks().find((I) => I.readyState !== "ended");
-      if (!S) throw Ui("unsupported-api", "No usable microphone audio track was returned.");
+      if (!S)
+        throw Ui(
+          "unsupported-api",
+          "No usable microphone audio track was returned."
+        );
       const A = () => {
-        t === g && (h(), l({ active: !1, pending: !1, failure: { code: "unsupported-api", message: "Microphone capture ended. Start again with an explicit gesture." } }));
+        t === g && (h(), l({
+          active: !1,
+          pending: !1,
+          failure: {
+            code: "unsupported-api",
+            message: "Microphone capture ended. Start again with an explicit gesture."
+          }
+        }));
       };
-      if (S.addEventListener("ended", A), g.cleanup.push(() => S.removeEventListener("ended", A)), await Promise.race([c(f, async () => {
-        u(g) && (g.attached = !0, await f.replaceTrack(S));
-      }), b]), !u(g) || (l({ active: !0, pending: !1 }), !u(g))) return;
+      if (S.addEventListener("ended", A), g.cleanup.push(() => S.removeEventListener("ended", A)), await Promise.race([
+        c(f, async () => {
+          u(g) && (g.attached = !0, await f.replaceTrack(S));
+        }),
+        b
+      ]), !u(g) || (l({ active: !0, pending: !1 }), !u(g))) return;
       let _;
       try {
         _ = (i.createMeter ?? Ix)(T, (I) => {
-          u(g) && e.active && Number.isFinite(I) && l({ active: !0, pending: !1, level: Math.max(0, Math.min(1, I)) });
+          u(g) && e.active && Number.isFinite(I) && l({
+            active: !0,
+            pending: !1,
+            level: Math.max(0, Math.min(1, I))
+          });
         });
       } catch {
         return;
@@ -32210,7 +32791,16 @@ function xx(i = {}) {
       u(g) ? g.meter = _ : _();
     } catch (y) {
       if (t !== g) return;
-      const E = y instanceof Error ? y.name : "", b = y instanceof Pe ? y.failure : E === "NotAllowedError" || E === "SecurityError" ? { code: "policy", message: "Microphone permission was denied by the browser or document policy." } : E === "NotFoundError" || E === "DevicesNotFoundError" ? { code: "unsupported-api", message: "No microphone device is available." } : { code: "ice", message: "Microphone capture or sender attachment failed." };
+      const E = y instanceof Error ? y.name : "", b = y instanceof Pe ? y.failure : E === "NotAllowedError" || E === "SecurityError" ? {
+        code: "policy",
+        message: "Microphone permission was denied by the browser or document policy."
+      } : E === "NotFoundError" || E === "DevicesNotFoundError" ? {
+        code: "unsupported-api",
+        message: "No microphone device is available."
+      } : {
+        code: "ice",
+        message: "Microphone capture or sender attachment failed."
+      };
       throw h(), l({ active: !1, pending: !1, failure: b }), new Pe(b);
     }
   }
@@ -32231,7 +32821,10 @@ function xx(i = {}) {
   };
 }
 function ps() {
-  return new Pe({ code: "cancelled", message: "WebRTC session cancelled." });
+  return new Pe({
+    code: "cancelled",
+    message: "WebRTC session cancelled."
+  });
 }
 function ti(i, e) {
   return new Promise((t, s) => {
@@ -32259,7 +32852,11 @@ function Lx(i, e, t) {
 const pt = (i, e, t) => new Pe({ code: i, message: e, ...t === void 0 ? {} : { status: t } }), Rx = (i, e) => e ? i ? "sendrecv" : "sendonly" : i ? "recvonly" : "inactive";
 async function kx(i, e) {
   const t = i.body?.getReader();
-  if (!t) throw pt("unsupported-api", "The signaling endpoint returned an empty SDP answer.");
+  if (!t)
+    throw pt(
+      "unsupported-api",
+      "The signaling endpoint returned an empty SDP answer."
+    );
   const s = () => {
     t.cancel().catch(() => {
     });
@@ -32271,7 +32868,11 @@ async function kx(i, e) {
     for (; ; ) {
       const a = await ti(t.read(), e);
       if (a.done) return r + n.decode();
-      if (o += a.value.byteLength, o > 2 * 1024 * 1024) throw pt("unsupported-api", "The signaling endpoint returned an oversized SDP answer.");
+      if (o += a.value.byteLength, o > 2 * 1024 * 1024)
+        throw pt(
+          "unsupported-api",
+          "The signaling endpoint returned an oversized SDP answer."
+        );
       r += n.decode(a.value, { stream: !0 });
     }
   } finally {
@@ -32311,7 +32912,16 @@ function Px(i = {}) {
   }
   function a(d) {
     d.context.video.play().catch((f) => {
-      t(d) && (f instanceof Error && f.name === "NotAllowedError" ? (d.blocked = !0, clearTimeout(d.deadline), d.context.emit({ type: "failure", failure: { code: "autoplay", message: "Playback needs a user gesture." } })) : n(d, { code: "unsupported-codec", message: "WebRTC video playback failed." }));
+      t(d) && (f instanceof Error && f.name === "NotAllowedError" ? (d.blocked = !0, clearTimeout(d.deadline), d.context.emit({
+        type: "failure",
+        failure: {
+          code: "autoplay",
+          message: "Playback needs a user gesture."
+        }
+      })) : n(d, {
+        code: "unsupported-codec",
+        message: "WebRTC video playback failed."
+      }));
     });
   }
   function l(d, f) {
@@ -32340,7 +32950,14 @@ function Px(i = {}) {
           b.type === "inbound-rtp" && (b.kind === "video" || b.mediaType === "video") && (g += T("framesDecoded"), m += T("bytesReceived"), y += T("packetsLost")), b.type === "candidate-pair" && b.state === "succeeded" && b.nominated && (E = T("currentRoundTripTime"));
         }), g > 0 && d.context.video.readyState >= 2 && d.context.video.videoWidth > 0 && r(d);
         try {
-          i.onStats?.(Object.freeze({ framesDecoded: g, bytesReceived: m, packetsLost: y, ...E === void 0 ? {} : { roundTripTime: E } }));
+          i.onStats?.(
+            Object.freeze({
+              framesDecoded: g,
+              bytesReceived: m,
+              packetsLost: y,
+              ...E === void 0 ? {} : { roundTripTime: E }
+            })
+          );
         } catch {
         }
       }).catch(() => {
@@ -32350,37 +32967,82 @@ function Px(i = {}) {
     }, i.statsIntervalMs ?? 1e3);
   }
   function u(d, f) {
-    if (f instanceof Pe && f.failure.code !== "network") return f.failure;
+    if (f instanceof Pe && f.failure.code !== "network")
+      return f.failure;
     let p = "unavailable";
     try {
       p = new URL(i.documentUrl ?? globalThis.location?.href ?? "").origin;
     } catch {
     }
-    return { code: "network", message: `WebRTC SDP signaling failed. HA document origin: ${p}; NVR signaling origin: ${d.context.client.profile.origin}. Check TLS trust, mixed content, proxy and browser connectivity.` };
+    return {
+      code: "network",
+      message: `WebRTC SDP signaling failed. HA document origin: ${p}; NVR signaling origin: ${d.context.client.profile.origin}. Check TLS trust, mixed content, proxy and browser connectivity.`
+    };
   }
   async function h(d) {
     e && s(e);
-    const f = { context: d, cancel: new AbortController(), cleanups: [], first: !1, blocked: !1, ready: !1, listen: !1, talk: !1, closed: !1 };
+    const f = {
+      context: d,
+      cancel: new AbortController(),
+      cleanups: [],
+      first: !1,
+      blocked: !1,
+      ready: !1,
+      listen: !1,
+      talk: !1,
+      closed: !1
+    };
     e = f;
     const p = () => s(f);
-    if (d.signal.addEventListener("abort", p, { once: !0 }), f.cleanups.push(() => d.signal.removeEventListener("abort", p)), d.signal.aborted)
+    if (d.signal.addEventListener("abort", p, { once: !0 }), f.cleanups.push(
+      () => d.signal.removeEventListener("abort", p)
+    ), d.signal.aborted)
       throw s(f), ps();
     const { config: g, capabilities: m, camera: y, video: E, client: b } = d, T = g.timeouts.webrtc_ms ?? (g.timeouts.connection_ms === "inherit" ? m.connectionTimeoutMs ?? 3e4 : g.timeouts.connection_ms);
-    f.deadline = setTimeout(() => n(f, { code: "timeout", message: "WebRTC did not decode a video frame before the connection deadline." }), T);
+    f.deadline = setTimeout(
+      () => n(f, {
+        code: "timeout",
+        message: "WebRTC did not decode a video frame before the connection deadline."
+      }),
+      T
+    );
     try {
-      if (m.go2rtc === "denied" || m.transports.webrtc === "denied") throw pt("policy", "WebRTC is disabled by server policy.");
-      if (y?.privacy === !0) throw pt("privacy", "Camera privacy is enabled.");
-      if (y?.capabilities["live.view"] === "denied") throw pt("policy", "Live viewing is denied.");
-      if (y?.status === "offline" || y?.status === "disabled") throw pt("source-offline", "Source is offline.");
-      if (!i.createPeerConnection && !globalThis.RTCPeerConnection) throw pt("unsupported-api", "WebRTC is unavailable in this browser.");
+      if (m.go2rtc === "denied" || m.transports.webrtc === "denied")
+        throw pt("policy", "WebRTC is disabled by server policy.");
+      if (y?.privacy === !0)
+        throw pt("privacy", "Camera privacy is enabled.");
+      if (y?.capabilities["live.view"] === "denied")
+        throw pt("policy", "Live viewing is denied.");
+      if (y?.status === "offline" || y?.status === "disabled")
+        throw pt("source-offline", "Source is offline.");
+      if (!i.createPeerConnection && !globalThis.RTCPeerConnection)
+        throw pt("unsupported-api", "WebRTC is unavailable in this browser.");
       const S = g.audio.enabled && m.audioDisabled !== !0;
       f.listen = S && g.audio.listen && y?.capabilities["audio.listen"] !== "denied", f.talk = S && g.audio.microphone && y?.backchannel !== "denied" && y?.capabilities["audio.talk"] !== "denied";
-      const A = g.ice_servers ?? await ti(b.iceServers({ signal: f.cancel.signal }), f.cancel.signal);
+      const A = g.ice_servers ?? await ti(
+        b.iceServers({ signal: f.cancel.signal }),
+        f.cancel.signal
+      );
       if (!t(f)) throw ps();
-      const _ = (i.createPeerConnection ?? ((P) => new RTCPeerConnection(P)))({ iceServers: A.map((P) => ({ urls: P.urls, ...P.username === void 0 ? {} : { username: P.username }, ...P.credential === void 0 ? {} : { credential: P.credential } })), iceCandidatePoolSize: 0, bundlePolicy: "max-bundle" });
+      const _ = (i.createPeerConnection ?? ((P) => new RTCPeerConnection(P)))({
+        iceServers: A.map((P) => ({
+          urls: P.urls,
+          ...P.username === void 0 ? {} : { username: P.username },
+          ...P.credential === void 0 ? {} : { credential: P.credential }
+        })),
+        iceCandidatePoolSize: 0,
+        bundlePolicy: "max-bundle"
+      });
       f.peer = _, f.stream = (i.createMediaStream ?? (() => new MediaStream()))(), E.srcObject = f.stream, E.autoplay = !0, E.playsInline = !0, E.muted = g.audio.muted || !f.listen, E.volume = g.audio.volume, o(f);
-      const I = _.addTransceiver("video", { direction: "recvonly" });
-      l(I, "video"), (f.listen || f.talk) && (f.audio = _.addTransceiver("audio", { direction: Rx(f.listen, f.talk) }), l(f.audio, "audio"), f.talk && (f.revoke = Oh(f.audio.sender, () => t(f) && f.ready && (f.audio?.currentDirection === "sendrecv" || f.audio?.currentDirection === "sendonly"))));
+      const I = _.addTransceiver("video", {
+        direction: "recvonly"
+      });
+      l(I, "video"), (f.listen || f.talk) && (f.audio = _.addTransceiver("audio", {
+        direction: Rx(f.listen, f.talk)
+      }), l(f.audio, "audio"), f.talk && (f.revoke = Oh(
+        f.audio.sender,
+        () => t(f) && f.ready && (f.audio?.currentDirection === "sendrecv" || f.audio?.currentDirection === "sendonly")
+      )));
       const x = (P) => {
         if (!t(f)) {
           P.track.stop();
@@ -32388,42 +33050,97 @@ function Px(i = {}) {
         }
         P.track.kind === "audio" && !f.listen && (P.track.enabled = !1), f.stream.getTracks().includes(P.track) || f.stream.addTrack(P.track);
         const $ = () => {
-          t(f) && (P.track.kind === "video" ? n(f, { code: "source-offline", message: "The remote video track ended." }) : (f.stream?.removeTrack(P.track), P.track.enabled = !1));
+          t(f) && (P.track.kind === "video" ? n(f, {
+            code: "source-offline",
+            message: "The remote video track ended."
+          }) : (f.stream?.removeTrack(P.track), P.track.enabled = !1));
         };
         P.track.addEventListener("ended", $, { once: !0 }), f.cleanups.push(() => P.track.removeEventListener("ended", $));
       }, w = () => {
         if (!t(f)) return;
         const P = _.iceConnectionState;
-        if (P === "failed" || P === "closed") n(f, { code: "ice", message: "WebRTC media connection failed." });
+        if (P === "failed" || P === "closed")
+          n(f, {
+            code: "ice",
+            message: "WebRTC media connection failed."
+          });
         else if (P === "disconnected") {
           if (f.grace !== void 0) return;
-          f.revoke?.(), d.emit({ type: "state", state: "recovering" }), f.grace = setTimeout(() => n(f, { code: "ice", message: "WebRTC media connection did not recover within the ICE grace period." }), g.timeouts.ice_grace_ms);
-        } else (P === "connected" || P === "completed") && (f.grace !== void 0 && f.audio && f.talk && (f.revoke = Oh(f.audio.sender, () => t(f) && f.ready && (f.audio?.currentDirection === "sendrecv" || f.audio?.currentDirection === "sendonly"))), clearTimeout(f.grace), delete f.grace, f.first && d.emit({ type: "state", state: "playing" }));
+          f.revoke?.(), d.emit({ type: "state", state: "recovering" }), f.grace = setTimeout(
+            () => n(f, {
+              code: "ice",
+              message: "WebRTC media connection did not recover within the ICE grace period."
+            }),
+            g.timeouts.ice_grace_ms
+          );
+        } else (P === "connected" || P === "completed") && (f.grace !== void 0 && f.audio && f.talk && (f.revoke = Oh(
+          f.audio.sender,
+          () => t(f) && f.ready && (f.audio?.currentDirection === "sendrecv" || f.audio?.currentDirection === "sendonly")
+        )), clearTimeout(f.grace), delete f.grace, f.first && d.emit({ type: "state", state: "playing" }));
       };
       _.addEventListener("track", x), _.addEventListener("iceconnectionstatechange", w), f.cleanups.push(() => {
         _.removeEventListener("track", x), _.removeEventListener("iceconnectionstatechange", w);
       });
       const R = await ti(_.createOffer(), f.cancel.signal);
-      if (await ti(_.setLocalDescription(R), f.cancel.signal), await Lx(_, f.cancel.signal, i.iceGatheringTimeoutMs ?? 1e3), !t(f)) throw ps();
+      if (await ti(_.setLocalDescription(R), f.cancel.signal), await Lx(
+        _,
+        f.cancel.signal,
+        i.iceGatheringTimeoutMs ?? 1e3
+      ), !t(f)) throw ps();
       const k = _.localDescription?.sdp;
-      if (!k) throw pt("unsupported-api", "WebRTC did not produce a local SDP offer.");
+      if (!k)
+        throw pt(
+          "unsupported-api",
+          "WebRTC did not produce a local SDP offer."
+        );
       const N = b.mediaUrls(d.source, f.listen).webrtc, z = b.profile.baseUrl;
-      if (!N.startsWith(z)) throw pt("configuration", "WebRTC signaling must stay within the authenticated NVR scope.");
-      const B = await ti(b.authorizedFetch(N.slice(z.length), { method: "POST", headers: { "Content-Type": "application/sdp", Accept: "application/sdp" }, body: k, signal: f.cancel.signal }).then((P) => {
-        if (!t(f))
-          throw P.body?.cancel().catch(() => {
-          }), ps();
-        return P;
-      }), f.cancel.signal);
+      if (!N.startsWith(z))
+        throw pt(
+          "configuration",
+          "WebRTC signaling must stay within the authenticated NVR scope."
+        );
+      const B = await ti(
+        b.authorizedFetch(N.slice(z.length), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/sdp",
+            Accept: "application/sdp"
+          },
+          body: k,
+          signal: f.cancel.signal
+        }).then((P) => {
+          if (!t(f))
+            throw P.body?.cancel().catch(() => {
+            }), ps();
+          return P;
+        }),
+        f.cancel.signal
+      );
       if (B.status !== 200 && B.status !== 201)
         throw B.body?.cancel().catch(() => {
-        }), pt(B.status === 401 ? "auth" : B.status === 403 ? "policy" : "proxy", "WebRTC SDP request was rejected.", B.status);
-      if (!/^application\/sdp(?:\s*;|$)/i.test(B.headers.get("content-type") ?? ""))
+        }), pt(
+          B.status === 401 ? "auth" : B.status === 403 ? "policy" : "proxy",
+          "WebRTC SDP request was rejected.",
+          B.status
+        );
+      if (!/^application\/sdp(?:\s*;|$)/i.test(
+        B.headers.get("content-type") ?? ""
+      ))
         throw B.body?.cancel().catch(() => {
-        }), pt("unsupported-api", "The signaling endpoint did not return a supported SDP answer.");
+        }), pt(
+          "unsupported-api",
+          "The signaling endpoint did not return a supported SDP answer."
+        );
       const O = await kx(B, f.cancel.signal);
-      if (!/^v=0\r?\n/.test(O)) throw pt("unsupported-api", "The signaling endpoint did not return a supported SDP answer.");
-      if (await ti(_.setRemoteDescription({ type: "answer", sdp: O }), f.cancel.signal), !t(f)) throw ps();
+      if (!/^v=0\r?\n/.test(O))
+        throw pt(
+          "unsupported-api",
+          "The signaling endpoint did not return a supported SDP answer."
+        );
+      if (await ti(
+        _.setRemoteDescription({ type: "answer", sdp: O }),
+        f.cancel.signal
+      ), !t(f)) throw ps();
       f.ready = !0, c(f), a(f);
     } catch (S) {
       if (f.failure) throw new Pe(f.failure);
@@ -32445,7 +33162,11 @@ function Px(i = {}) {
     async setListening(d) {
       const f = e;
       if (!(!f || !t(f))) {
-        if (d && !f.listen) throw pt("policy", "Listening was not enabled or permitted for this WebRTC session.");
+        if (d && !f.listen)
+          throw pt(
+            "policy",
+            "Listening was not enabled or permitted for this WebRTC session."
+          );
         f.context.video.muted = !d, d && (f.blocked = !1, a(f));
       }
     }
@@ -32455,7 +33176,13 @@ class dg {
   constructor(e, t, s = !1) {
     this.context = e, this.kind = t, this.opaqueMediaErrors = s, this.abort = new AbortController(), this.cleanups = [], this.ended = !1, this.rendered = !1, this.blocked = !1;
     const { video: n, signal: r, config: o, capabilities: a } = e, l = o.timeouts[`${t}_ms`] ?? (o.timeouts.connection_ms === "inherit" ? a.connectionTimeoutMs ?? 3e4 : o.timeouts.connection_ms);
-    this.deadline = setTimeout(() => this.fail("timeout"), l), this.on(r, "abort", () => this.close()), n.muted = !eo(e) || o.audio.muted, n.volume = o.audio.volume, n.playsInline = !0, this.on(n, "error", () => this.fail(this.opaqueMediaErrors ? "policy" : n.error?.code === 4 ? "unsupported-codec" : "network"));
+    this.deadline = setTimeout(() => this.fail("timeout"), l), this.on(r, "abort", () => this.close()), n.muted = !eo(e) || o.audio.muted, n.volume = o.audio.volume, n.playsInline = !0, this.on(
+      n,
+      "error",
+      () => this.fail(
+        this.opaqueMediaErrors ? "policy" : n.error?.code === 4 ? "unsupported-codec" : "network"
+      )
+    );
     const c = () => {
       !this.alive || this.rendered || n.videoWidth <= 0 || n.readyState < 2 || (this.rendered = !0, this.clearDeadline(), e.emit({ type: "first-frame", transport: t }));
     };
@@ -32492,7 +33219,10 @@ class dg {
         await this.context.video.play();
       } catch (e) {
         if (!this.alive) return;
-        e instanceof Error && e.name === "NotAllowedError" ? (this.clearDeadline(), this.blocked || (this.blocked = !0, this.context.emit({ type: "failure", failure: U("autoplay").failure }))) : this.fail(this.opaqueMediaErrors ? "policy" : "network");
+        e instanceof Error && e.name === "NotAllowedError" ? (this.clearDeadline(), this.blocked || (this.blocked = !0, this.context.emit({
+          type: "failure",
+          failure: U("autoplay").failure
+        }))) : this.fail(this.opaqueMediaErrors ? "policy" : "network");
       }
   }
   fail(e, t) {
@@ -32522,8 +33252,10 @@ function eo(i) {
 function fg(i, e) {
   if (i.signal.aborted) throw U("cancelled");
   if (i.camera?.privacy === !0) throw U("privacy");
-  if (i.camera?.capabilities["live.view"] === "denied" || i.capabilities.transports[e] === "denied") throw U("policy");
-  if (i.camera?.status === "offline" || i.camera?.status === "disabled") throw U("source-offline");
+  if (i.camera?.capabilities["live.view"] === "denied" || i.capabilities.transports[e] === "denied")
+    throw U("policy");
+  if (i.camera?.status === "offline" || i.camera?.status === "disabled")
+    throw U("source-offline");
 }
 const Mh = ["avc1.640029", "avc1.64002A", "avc1.640033", "hvc1.1.6.L153.B0"], Cx = ["mp4a.40.2", "mp4a.40.5", "flac", "opus"];
 function Dx(i = {}) {
@@ -32532,13 +33264,19 @@ function Dx(i = {}) {
     kind: "mse",
     async start(t) {
       if (e?.close(), e = void 0, fg(t, "mse"), t.capabilities.go2rtc === "denied") throw U("policy");
-      if (t.client.profile.auth !== "session" || !t.client.profile.sameOrigin) throw U("configuration");
+      if (t.client.profile.auth !== "session" || !t.client.profile.sameOrigin)
+        throw U("configuration");
       const s = i.managedMediaSource ?? globalThis.ManagedMediaSource, n = s ?? i.mediaSource ?? globalThis.MediaSource;
-      if (!n || typeof n.isTypeSupported != "function" || !i.createWebSocket && !globalThis.WebSocket) throw U("unsupported-api");
-      const r = eo(t), o = [...Mh, ...r ? Cx : []].filter((u) => n.isTypeSupported(`video/mp4; codecs="${u}"`));
-      if (!o.some((u) => Mh.includes(u))) throw U("unsupported-codec");
+      if (!n || typeof n.isTypeSupported != "function" || !i.createWebSocket && !globalThis.WebSocket)
+        throw U("unsupported-api");
+      const r = eo(t), o = [...Mh, ...r ? Cx : []].filter(
+        (u) => n.isTypeSupported(`video/mp4; codecs="${u}"`)
+      );
+      if (!o.some((u) => Mh.includes(u)))
+        throw U("unsupported-codec");
       const a = new URL(t.client.mediaUrls(t.source, r).mse), l = new URL(t.client.profile.go2rtcUrl);
-      if (a.origin !== l.origin.replace(/^http/, "ws") || a.pathname !== `${l.pathname}api/ws` || a.username || a.password) throw U("configuration");
+      if (a.origin !== l.origin.replace(/^http/, "ws") || a.pathname !== `${l.pathname}api/ws` || a.username || a.password)
+        throw U("configuration");
       const c = e = new dg(t, "mse");
       if (c.alive)
         try {
@@ -32598,14 +33336,22 @@ function Dx(i = {}) {
                   c.fail("policy");
                   return;
                 }
-                if (_.type !== "mse" || !m || d || typeof _.value != "string") throw U("unsupported-api");
+                if (_.type !== "mse" || !m || d || typeof _.value != "string")
+                  throw U("unsupported-api");
                 const x = /^video\/mp4;\s*codecs="([A-Za-z0-9.,\s-]+)"$/i.exec(_.value)?.[1]?.split(",").map((R) => R.trim()), w = (R) => R.split(".")[0]?.toLowerCase();
-                if (!x?.length || !x.some((R) => ["avc1", "hvc1"].includes(w(R) ?? "")) || x.some((R) => !o.some((k) => w(k) === w(R))) || !n.isTypeSupported(_.value)) throw U("unsupported-codec");
+                if (!x?.length || !x.some(
+                  (R) => ["avc1", "hvc1"].includes(w(R) ?? "")
+                ) || x.some(
+                  (R) => !o.some((k) => w(k) === w(R))
+                ) || !n.isTypeSupported(_.value))
+                  throw U("unsupported-codec");
                 d = u.addSourceBuffer(_.value), d.mode = "segments", c.on(d, "updateend", () => {
                   g = 0, T();
                 }), c.on(d, "error", () => c.fail("buffer"));
               } catch (_) {
-                c.failWith(_ instanceof Error && _.name === "NvrError" ? _ : U("unsupported-codec"));
+                c.failWith(
+                  _ instanceof Error && _.name === "NvrError" ? _ : U("unsupported-codec")
+                );
               }
             } else if (A instanceof ArrayBuffer) {
               if (!d) {
@@ -32622,8 +33368,12 @@ function Dx(i = {}) {
           }), s)
             t.video.disableRemotePlayback = !0, t.video.srcObject = u;
           else {
-            const S = (i.createObjectURL ?? URL.createObjectURL)(u);
-            c.own(() => (i.revokeObjectURL ?? URL.revokeObjectURL)(S)), t.video.srcObject = null, t.video.src = S;
+            const S = (i.createObjectURL ?? URL.createObjectURL)(
+              u
+            );
+            c.own(
+              () => (i.revokeObjectURL ?? URL.revokeObjectURL)(S)
+            ), t.video.srcObject = null, t.video.src = S;
           }
           E(), c.play();
         } catch (u) {
@@ -32645,30 +33395,42 @@ function pg(i, e) {
   t.video.muted = !e, e && i.play();
 }
 function Fr(i, e, t = i.profile.baseUrl) {
-  if (/[\\\s#]/.test(e) || e.startsWith("//") || e.includes("{$")) throw U("configuration");
+  if (/[\\\s#]/.test(e) || e.startsWith("//") || e.includes("{$"))
+    throw U("configuration");
   let s;
   try {
     s = decodeURIComponent(e.split("?")[0]);
   } catch {
     throw U("configuration");
   }
-  if (s.includes("%") || s.split("/").some((l) => l === "." || l === "..")) throw U("configuration");
+  if (s.includes("%") || s.split("/").some((l) => l === "." || l === ".."))
+    throw U("configuration");
   const n = new URL(e, t), r = new URL(i.profile.baseUrl);
-  if (n.origin !== r.origin || n.username || n.password || !n.pathname.startsWith(r.pathname)) throw U("configuration");
-  const o = n.pathname.slice(r.pathname.length), a = new URL(i.profile.go2rtcUrl).pathname.slice(r.pathname.length);
-  if (!(o === `${a}api/stream.m3u8` || o.startsWith(`${a}api/hls/`) && /^(playlist\.m3u8|init\.mp4|segment\.ts|segment\.m4s)$/.test(o.slice(`${a}api/hls/`.length)) || /^hls\/[a-zA-Z0-9_.%-]+\/[a-zA-Z0-9_.-]+$/.test(o))) throw U("configuration");
+  if (n.origin !== r.origin || n.username || n.password || !n.pathname.startsWith(r.pathname))
+    throw U("configuration");
+  const o = n.pathname.slice(r.pathname.length), a = new URL(i.profile.go2rtcUrl).pathname.slice(
+    r.pathname.length
+  );
+  if (!(o === `${a}api/stream.m3u8` || o.startsWith(`${a}api/hls/`) && /^(playlist\.m3u8|init\.mp4|segment\.ts|segment\.m4s)$/.test(
+    o.slice(`${a}api/hls/`.length)
+  ) || /^hls\/[a-zA-Z0-9_.%-]+\/[a-zA-Z0-9_.-]+$/.test(o)))
+    throw U("configuration");
   return o + n.search;
 }
 function Ox(i, e, t) {
-  if (!e.trimStart().startsWith("#EXTM3U") || e.length > 1024 * 1024) throw U("unsupported-api");
+  if (!e.trimStart().startsWith("#EXTM3U") || e.length > 1024 * 1024)
+    throw U("unsupported-api");
   for (const s of e.split(/\r?\n/).map((n) => n.trim()))
     if (!(!s || s === "#EXTM3U"))
       if (!s.startsWith("#")) Fr(i, s, t);
       else {
-        const n = [...s.matchAll(/(?:^|[:,])(?:[A-Z-]*URI)=("[^"]*"|[^,]*)/g)];
+        const n = [
+          ...s.matchAll(/(?:^|[:,])(?:[A-Z-]*URI)=("[^"]*"|[^,]*)/g)
+        ];
         for (const r of n) {
           const o = r[1];
-          if (!o.startsWith('"') || !o.endsWith('"')) throw U("configuration");
+          if (!o.startsWith('"') || !o.endsWith('"'))
+            throw U("configuration");
           Fr(i, o.slice(1, -1), t);
         }
       }
@@ -32705,7 +33467,10 @@ function $x(i, e, t) {
       this.context = n, this.stats = Nh(), this.stats.loading.start = performance.now();
       const a = this.controller = new AbortController(), l = () => !this.destroyed && !a.signal.aborted && this.controller === a && !e.aborted, c = () => this.abort();
       e.addEventListener("abort", c, { once: !0 }), this.detach = () => e.removeEventListener("abort", c);
-      const u = Math.min(3e4, Math.max(100, r.loadPolicy.maxLoadTimeMs));
+      const u = Math.min(
+        3e4,
+        Math.max(100, r.loadPolicy.maxLoadTimeMs)
+      );
       this.timer = setTimeout(() => {
         l() && (this.abort(), t(U("timeout")), !e.aborted && !this.destroyed && o.onTimeout(this.stats, n, null));
       }, u), (async () => {
@@ -32713,10 +33478,18 @@ function $x(i, e, t) {
           const h = Fr(i, n.url), d = new Headers(), f = n.rangeStart === 0 && n.rangeEnd === 0;
           if (n.rangeStart !== void 0 && !f) {
             const I = n.rangeStart, x = n.rangeEnd;
-            if (!Number.isSafeInteger(I) || I < 0 || x !== void 0 && (!Number.isSafeInteger(x) || x <= I)) throw U("configuration");
-            d.set("Range", `bytes=${I}-${x === void 0 ? "" : x - 1}`);
+            if (!Number.isSafeInteger(I) || I < 0 || x !== void 0 && (!Number.isSafeInteger(x) || x <= I))
+              throw U("configuration");
+            d.set(
+              "Range",
+              `bytes=${I}-${x === void 0 ? "" : x - 1}`
+            );
           }
-          const p = await i.authorizedFetch(h, { signal: a.signal, headers: d, redirect: "error" });
+          const p = await i.authorizedFetch(h, {
+            signal: a.signal,
+            headers: d,
+            redirect: "error"
+          });
           if (!l()) {
             await p.body?.cancel();
             return;
@@ -32724,7 +33497,10 @@ function $x(i, e, t) {
           if (p.redirected || p.url && p.url !== n.url)
             throw await p.body?.cancel(), U("configuration");
           if (!p.ok)
-            throw await p.body?.cancel(), U(p.status === 401 ? "auth" : p.status === 403 ? "policy" : p.status === 404 ? "source-offline" : "network", p.status);
+            throw await p.body?.cancel(), U(
+              p.status === 401 ? "auth" : p.status === 403 ? "policy" : p.status === 404 ? "source-offline" : "network",
+              p.status
+            );
           this.stats.loading.first = performance.now();
           const g = n.responseType !== "arraybuffer", m = g ? 1024 * 1024 : 16 * 1024 * 1024, y = p.body?.getReader();
           if (!y) throw U("unsupported-api");
@@ -32734,7 +33510,9 @@ function $x(i, e, t) {
             y.cancel().catch(() => {
             });
           };
-          a.signal.addEventListener("abort", T, { once: !0 });
+          a.signal.addEventListener("abort", T, {
+            once: !0
+          });
           try {
             for (; ; ) {
               const I = await y.read();
@@ -32756,13 +33534,23 @@ function $x(i, e, t) {
           for (const I of E)
             S.set(I, A), A += I.byteLength;
           const _ = g ? new TextDecoder().decode(S) : S.buffer;
-          typeof _ == "string" && Ox(i, _, n.url), this.stats.loaded = this.stats.total = b, this.stats.loading.end = performance.now(), this.stats.chunkCount = 1, this.clear(), o.onSuccess({ url: n.url, data: _, code: p.status }, this.stats, n, null);
+          typeof _ == "string" && Ox(i, _, n.url), this.stats.loaded = this.stats.total = b, this.stats.loading.end = performance.now(), this.stats.chunkCount = 1, this.clear(), o.onSuccess(
+            { url: n.url, data: _, code: p.status },
+            this.stats,
+            n,
+            null
+          );
         } catch (h) {
           if (!l()) return;
           this.clear();
           const d = qt(h);
           if (t(h), e.aborted || this.destroyed) return;
-          o.onError({ code: d.status ?? 0, text: d.message }, n, null, this.stats);
+          o.onError(
+            { code: d.status ?? 0, text: d.message },
+            n,
+            null,
+            this.stats
+          );
         }
       })();
     }
@@ -32791,14 +33579,29 @@ function Nx(i = {}) {
       Fr(t.client, o);
       const a = i.hls ?? Vt, l = a.isSupported(), c = t.client.profile.auth === "session" && t.client.profile.sameOrigin && new URL(t.client.profile.baseUrl).pathname !== "/", u = !l && c && !!t.video.canPlayType("application/vnd.apple.mpegurl");
       if (!l && !u) throw U("unsupported-api");
-      const h = e = new dg(t, "hls", u);
+      const h = e = new dg(
+        t,
+        "hls",
+        u
+      );
       if (h.alive)
         try {
           if (u) {
             t.video.crossOrigin = "use-credentials", t.video.src = o, h.play();
             return;
           }
-          const d = $x(t.client, h.abort.signal, (m) => h.failWith(m)), f = { default: { maxTimeToFirstByteMs: 1e4, maxLoadTimeMs: 2e4, timeoutRetry: null, errorRetry: null } }, p = new a({
+          const d = $x(
+            t.client,
+            h.abort.signal,
+            (m) => h.failWith(m)
+          ), f = {
+            default: {
+              maxTimeToFirstByteMs: 1e4,
+              maxLoadTimeMs: 2e4,
+              timeoutRetry: null,
+              errorRetry: null
+            }
+          }, p = new a({
             loader: d,
             enableWorker: !1,
             debug: !1,
@@ -32834,12 +33637,18 @@ function Nx(i = {}) {
                 } catch {
                   h.fail("buffer");
                 }
-              } else h.fail(y.type === a.ErrorTypes.MEDIA_ERROR ? "unsupported-codec" : "network", E);
+              } else
+                h.fail(
+                  y.type === a.ErrorTypes.MEDIA_ERROR ? "unsupported-codec" : "network",
+                  E
+                );
           }), p.on(a.Events.MANIFEST_PARSED, () => {
             h.alive && h.play();
           }), p.attachMedia(t.video), p.loadSource(o);
         } catch (d) {
-          throw h.close(), U(d instanceof Error && d.name === "NvrError" ? "configuration" : "unsupported-api");
+          throw h.close(), U(
+            d instanceof Error && d.name === "NvrError" ? "configuration" : "unsupported-api"
+          );
         }
     },
     async stop() {
@@ -32850,10 +33659,23 @@ function Nx(i = {}) {
     }
   };
 }
-const gg = { client: fl, playback: _x, talk: xx }, Fx = () => ({ state: "idle", attempt: 0, talking: !1, talk: { active: !1, pending: !1 } });
+const gg = {
+  client: fl,
+  playback: _x,
+  talk: xx
+}, Fx = () => ({
+  state: "idle",
+  attempt: 0,
+  talking: !1,
+  talk: { active: !1, pending: !1 }
+});
 class Ux {
   constructor(e, t, s, n = gg) {
-    this.config = e, this.video = t, this.changed = s, this.abort = new AbortController(), this.snapshot = Fx(), this.message = "", this.fallbackReason = "", this.challenge = "", this.denied = /* @__PURE__ */ new Set(), this.controlState = {}, this.busy = !1, this.detectionEnabled = !1, this.detections = [], this.visible = !0, this.playbackVisible = !0, this.startRevision = 0, this.authBusy = !1, this.ptzCleanup = /* @__PURE__ */ new Set(), this.moveAborts = /* @__PURE__ */ new Set(), this.listening = e.audio.enabled && e.audio.listen && !e.audio.muted, this.client = n.client(e), this.playback = n.playback({ client: this.client, talk: n.talk(), createTransport: (r) => r === "webrtc" ? Px() : r === "mse" ? Dx() : Nx() }), this.unsubscribe = this.playback.subscribe((r) => {
+    this.config = e, this.video = t, this.changed = s, this.abort = new AbortController(), this.snapshot = Fx(), this.message = "", this.fallbackReason = "", this.challenge = "", this.denied = /* @__PURE__ */ new Set(), this.controlState = {}, this.busy = !1, this.detectionEnabled = !1, this.detections = [], this.visible = !0, this.playbackVisible = !0, this.startRevision = 0, this.authBusy = !1, this.ptzCleanup = /* @__PURE__ */ new Set(), this.moveAborts = /* @__PURE__ */ new Set(), this.listening = e.audio.enabled && e.audio.listen && !e.audio.muted, this.client = n.client(e), this.playback = n.playback({
+      client: this.client,
+      talk: n.talk(),
+      createTransport: (r) => r === "webrtc" ? Px() : r === "mse" ? Dx() : Nx()
+    }), this.unsubscribe = this.playback.subscribe((r) => {
       const o = this.snapshot;
       this.snapshot = r, r.failure && (this.fallbackReason = r.failure.message), r.state === "auth-required" && (this.auth = r.failure?.code === "password-change" ? "password-change" : "credentials"), r.failure?.code === "privacy" && (this.controlState = { ...this.controlState, privacy: !0 }, this.detections = []), (o.transport !== r.transport || o.state === "playing" && r.state !== "playing") && this.stopInteractions(), r.state !== "playing" ? this.stopPolling() : this.poll(), this.changed();
     });
@@ -32878,7 +33700,10 @@ class Ux {
         return;
       }
       this.auth = void 0, this.challenge = "";
-      const [a, l] = await Promise.all([this.client.discover(r), this.client.clientConfig(r)]);
+      const [a, l] = await Promise.all([
+        this.client.discover(r),
+        this.client.clientConfig(r)
+      ]);
       if (!n()) return;
       this.source = dl(this.config, a), this.camera = a.find((c) => c.name === this.source?.camera), this.caps = l, this.changed(), await this.playback.start(this.video, this.config, this.abort.signal), n() && await this.playback.setVisible(this.playbackVisible);
     } catch (r) {
@@ -32919,13 +33744,22 @@ class Ux {
   permitted(e) {
     if (this.privateCamera && (e === "snapshot" || e === "detection"))
       return this.message = "Camera privacy is enabled.", this.changed(), !1;
-    const t = af(e, this.camera ? { ...this.camera, privacy: this.controlState.privacy ?? this.camera.privacy } : void 0, this.denied);
+    const t = af(
+      e,
+      this.camera ? {
+        ...this.camera,
+        privacy: this.controlState.privacy ?? this.camera.privacy
+      } : void 0,
+      this.denied
+    );
     return t.enabled || (this.message = t.reason, this.changed()), t.enabled && this.alive;
   }
   async read(e) {
     if (this.permitted(e))
       try {
-        const t = await this.client.readControl(this.camera.name, e, { signal: this.abort.signal });
+        const t = await this.client.readControl(this.camera.name, e, {
+          signal: this.abort.signal
+        });
         this.alive && (this.controlState = { ...this.controlState, ...t }, this.changed());
       } catch (t) {
         this.fail(t, e);
@@ -32933,19 +33767,32 @@ class Ux {
   }
   /** Shared-effect controls only run after an explicit per-action confirmation. */
   async mutate(e, t = (s) => window.confirm(s)) {
-    if (!(this.busy || e.action === "ptz" && this.ptzCleanup.size > 0 || !this.permitted(e.action) || (this.stopInteractions(), (e.action !== "ptz" || e.command === "set-home" || e.command === "save-preset") && !t(`${e.action === "refresh" ? "Refresh source" : e.action}: affects this camera and other viewers. Continue?`)))) {
+    if (!(this.busy || e.action === "ptz" && this.ptzCleanup.size > 0 || !this.permitted(e.action) || (this.stopInteractions(), (e.action !== "ptz" || e.command === "set-home" || e.command === "save-preset") && !t(
+      `${e.action === "refresh" ? "Refresh source" : e.action}: affects this camera and other viewers. Continue?`
+    )))) {
       this.busy = !0, this.changed();
       try {
         if (e.action === "recording" || e.action === "privacy") {
-          const r = await this.client.readControl(this.camera.name, e.action, { signal: this.abort.signal }), o = e.action === "recording" ? r.recording : r.privacy;
-          if (typeof o != "boolean") throw new Pe({ code: "unsupported-api", message: "" });
+          const r = await this.client.readControl(
+            this.camera.name,
+            e.action,
+            { signal: this.abort.signal }
+          ), o = e.action === "recording" ? r.recording : r.privacy;
+          if (typeof o != "boolean")
+            throw new Pe({ code: "unsupported-api", message: "" });
           e = { action: e.action, enabled: !o }, e.action === "privacy" && (this.controlState = { ...this.controlState, privacy: !0 }, this.stopPolling(), this.detections = [], this.stopInteractions(), await this.playback.stop());
         }
         if (!this.alive) return;
-        const n = e.action === "ptz" && (e.command === "home" || e.command === "goto-preset") ? await this.motion(e) : await this.client.control(this.camera.name, e, { signal: this.abort.signal });
+        const n = e.action === "ptz" && (e.command === "home" || e.command === "goto-preset") ? await this.motion(e) : await this.client.control(this.camera.name, e, {
+          signal: this.abort.signal
+        });
         if (!this.alive) return;
         if (this.message = n.state === "accepted" ? "Request accepted; active state is not yet confirmed." : "Request applied.", e.action === "privacy" || e.action === "recording" || e.action === "daynight" || e.action === "ptz") {
-          const r = await this.client.readControl(this.camera.name, e.action, { signal: this.abort.signal });
+          const r = await this.client.readControl(
+            this.camera.name,
+            e.action,
+            { signal: this.abort.signal }
+          );
           if (!this.alive) return;
           this.controlState = { ...this.controlState, ...r }, e.action === "privacy" && r.privacy !== !1 && (this.stopInteractions(), await this.playback.stop());
         }
@@ -32963,7 +33810,9 @@ class Ux {
   motion(e) {
     const t = this.camera.name, s = new AbortController();
     this.moveAborts.add(s);
-    const n = this.client.control(t, e, { signal: s.signal }), r = { moving: n, camera: t, released: !1 };
+    const n = this.client.control(t, e, {
+      signal: s.signal
+    }), r = { moving: n, camera: t, released: !1 };
     this.ptz = r;
     const o = n.catch((a) => this.fail(a, "ptz")).then(async () => {
       r.released && await this.client.control(t, { action: "ptz", command: "stop" }).catch(() => {
@@ -32972,15 +33821,23 @@ class Ux {
     return this.trackPtz(o), n;
   }
   startPtz(e, t) {
-    this.ptz || this.ptzCleanup.size || !this.permitted("ptz") || this.motion({ action: "ptz", command: "move", axes: uS(e, t) }).catch(() => {
+    this.ptz || this.ptzCleanup.size || !this.permitted("ptz") || this.motion({
+      action: "ptz",
+      command: "move",
+      axes: uS(e, t)
+    }).catch(() => {
     });
   }
   emergencyStop() {
-    this.stopTalk(), this.ptz ? this.stopPtz() : this.permitted("ptz") && this.trackPtz(this.client.control(this.camera.name, { action: "ptz", command: "stop" }).catch((e) => this.fail(e, "ptz")));
+    this.stopTalk(), this.ptz ? this.stopPtz() : this.permitted("ptz") && this.trackPtz(
+      this.client.control(this.camera.name, { action: "ptz", command: "stop" }).catch((e) => this.fail(e, "ptz"))
+    );
   }
   stopPtz() {
     const e = this.ptz;
-    e && (this.ptz = void 0, e.released = !0, this.trackPtz(this.client.control(e.camera, { action: "ptz", command: "stop" }).catch((t) => this.fail(t, "ptz"))));
+    e && (this.ptz = void 0, e.released = !0, this.trackPtz(
+      this.client.control(e.camera, { action: "ptz", command: "stop" }).catch((t) => this.fail(t, "ptz"))
+    ));
   }
   toggleDetections() {
     this.permitted("detection") && (this.detectionEnabled = !this.detectionEnabled, this.detectionEnabled ? this.poll() : (this.stopPolling(), this.detections = []), this.changed());
@@ -32989,7 +33846,8 @@ class Ux {
     clearTimeout(this.pollTimer), this.pollTimer = void 0, this.pollAbort?.abort(), this.pollAbort = void 0;
   }
   poll() {
-    if (this.pollTimer || this.pollAbort || !this.alive || !this.visible || this.privateCamera || !this.detectionEnabled || this.snapshot.state !== "playing" || !this.camera || this.denied.has("detection")) return;
+    if (this.pollTimer || this.pollAbort || !this.alive || !this.visible || this.privateCamera || !this.detectionEnabled || this.snapshot.state !== "playing" || !this.camera || this.denied.has("detection"))
+      return;
     const e = new AbortController();
     this.pollAbort = e, this.client.detections(this.camera.name, { signal: e.signal }).then((t) => {
       this.alive && !this.privateCamera && !e.signal.aborted && (this.detections = t.slice(0, 100), this.changed());
@@ -33004,19 +33862,32 @@ class Ux {
   async snapshotBlob(e = () => dS(this.video)) {
     if (!(!this.permitted("snapshot") || !this.source))
       try {
-        const t = new URL(this.client.mediaUrls(this.source, this.config.audio.listen).snapshot), s = new URL(this.client.profile.baseUrl);
-        if (t.origin !== s.origin || !t.pathname.startsWith(s.pathname)) throw new Pe({ code: "configuration", message: "" });
+        const t = new URL(
+          this.client.mediaUrls(this.source, this.config.audio.listen).snapshot
+        ), s = new URL(this.client.profile.baseUrl);
+        if (t.origin !== s.origin || !t.pathname.startsWith(s.pathname))
+          throw new Pe({ code: "configuration", message: "" });
         try {
-          const n = await this.client.authorizedFetch(t.href.slice(s.href.length), { signal: this.abort.signal });
+          const n = await this.client.authorizedFetch(
+            t.href.slice(s.href.length),
+            { signal: this.abort.signal }
+          );
           if (!n.ok)
-            throw await n.body?.cancel(), new Pe({ code: n.status === 401 ? "auth" : n.status === 403 ? "policy" : "unsupported-api", status: n.status, message: "" });
-          if (!/^image\/(jpeg|png)(;|$)/i.test(n.headers.get("Content-Type") ?? ""))
+            throw await n.body?.cancel(), new Pe({
+              code: n.status === 401 ? "auth" : n.status === 403 ? "policy" : "unsupported-api",
+              status: n.status,
+              message: ""
+            });
+          if (!/^image\/(jpeg|png)(;|$)/i.test(
+            n.headers.get("Content-Type") ?? ""
+          ))
             throw await n.body?.cancel(), new Pe({ code: "unsupported-api", message: "" });
           const r = await fS(n, this.abort.signal);
           return this.alive && !this.privateCamera ? r : void 0;
         } catch (n) {
           const r = qt(n);
-          if (this.privateCamera || !this.alive || r.code !== "unsupported-api" || ![404, 405, 501].includes(r.status ?? 0) || this.camera?.capabilities.snapshot !== "allowed") throw n;
+          if (this.privateCamera || !this.alive || r.code !== "unsupported-api" || ![404, 405, 501].includes(r.status ?? 0) || this.camera?.capabilities.snapshot !== "allowed")
+            throw n;
           try {
             const o = await e();
             return this.alive && !this.privateCamera ? o : void 0;
@@ -33035,13 +33906,16 @@ class Ux {
       let e;
       const t = Promise.all([...this.ptzCleanup]).catch(() => {
       });
-      await Promise.all([this.playback.dispose().catch(() => {
-      }), Promise.race([
-        t,
-        new Promise((s) => {
-          e = setTimeout(s, 2e3);
-        })
-      ])]), clearTimeout(e), this.moveAborts.forEach((s) => s.abort()), this.moveAborts.clear(), this.client.dispose();
+      await Promise.all([
+        this.playback.dispose().catch(() => {
+        }),
+        Promise.race([
+          t,
+          new Promise((s) => {
+            e = setTimeout(s, 2e3);
+          })
+        ])
+      ]), clearTimeout(e), this.moveAborts.forEach((s) => s.abort()), this.moveAborts.clear(), this.client.dispose();
     })(), this.disposal);
   }
 }
@@ -33075,7 +33949,14 @@ const Bx = td`
   @media (max-width:350px) { .body { padding:6px; } button { padding:7px; } header { padding:8px; } }
 `;
 function Fh(i, e) {
-  return { ...Vs(i), ...Object.fromEntries(qr.filter((t) => Object.hasOwn(e, t)).map((t) => [t, e[t]])) };
+  return {
+    ...Vs(i),
+    ...Object.fromEntries(
+      qr.filter((t) => Object.hasOwn(e, t)).map(
+        (t) => [t, e[t]]
+      )
+    )
+  };
 }
 let Gx = 0;
 class Kx extends oi {
@@ -33130,9 +34011,12 @@ class Kx extends oi {
     try {
       t = ys(e);
     } catch {
-      throw new Error("Invalid lightNVR card configuration. Review supported fields and audio/transport settings.");
+      throw new Error(
+        "Invalid lightNVR card configuration. Review supported fields and audio/transport settings."
+      );
     }
-    if (this.configured && JSON.stringify(t) === JSON.stringify(this.configured)) return;
+    if (this.configured && JSON.stringify(t) === JSON.stringify(this.configured))
+      return;
     const s = this.configured && JSON.stringify(Vs(t)) === JSON.stringify(Vs(this.configured));
     if (this.configured = t, s && this.config) {
       this.config = Fh(this.config, t), this.fullscreenRestore && (this.fullscreenRestore = Fh(this.fullscreenRestore, t)), this.requestUpdate();
@@ -33149,7 +34033,10 @@ class Kx extends oi {
   disconnectedCallback() {
     this.revision++, this.cancelInteractions();
     const e = this.session;
-    this.session = void 0, this.teardown = Promise.all([this.teardown, e?.dispose() ?? Promise.resolve()]).then(() => {
+    this.session = void 0, this.teardown = Promise.all([
+      this.teardown,
+      e?.dispose() ?? Promise.resolve()
+    ]).then(() => {
     }), this.observer?.disconnect(), this.observer = void 0, window.removeEventListener("blur", this.cancelInteractions), window.removeEventListener("pointerup", this.releasePointer), window.removeEventListener("pointercancel", this.releasePointer), window.removeEventListener("keyup", this.releaseKey), window.removeEventListener("keydown", this.escape), document.removeEventListener("visibilitychange", this.visibilityChanged), document.removeEventListener("fullscreenchange", this.fullscreenChanged), this.clearDownload(), super.disconnectedCallback();
   }
   restart() {
@@ -33157,30 +34044,54 @@ class Kx extends oi {
     this.cancelInteractions();
     const t = this.session;
     this.session = void 0, this.clearDownload(), this.requestUpdate();
-    const s = this.teardown = Promise.all([this.teardown, t?.dispose() ?? Promise.resolve()]).then(() => {
+    const s = this.teardown = Promise.all([
+      this.teardown,
+      t?.dispose() ?? Promise.resolve()
+    ]).then(() => {
     });
     !this.isConnected || !this.config || (async () => {
-      if (await s, await this.updateComplete, !this.isConnected || e !== this.revision || !this.config) return;
+      if (await s, await this.updateComplete, !this.isConnected || e !== this.revision || !this.config)
+        return;
       const n = this.renderRoot.querySelector("video");
       if (!n) return;
       n.volume = this.config.audio.volume;
-      const r = new Ux(this.config, n, () => {
-        this.requestUpdate();
-        const o = this.session?.snapshot, a = this.session?.privateCamera || ["auth", "policy", "privacy", "password-change", "totp"].includes(o?.failure?.code ?? "");
-        this.fullscreenRestore && !this.upgradeFailed && o && ["failed", "offline"].includes(o.state) && !a && (this.upgradeFailed = !0, this.notice = "Main fullscreen upgrade failed; returning to selected profile.", this.config = this.fullscreenRestore, this.restart());
-      }, this.runtime);
+      const r = new Ux(
+        this.config,
+        n,
+        () => {
+          this.requestUpdate();
+          const o = this.session?.snapshot, a = this.session?.privateCamera || ["auth", "policy", "privacy", "password-change", "totp"].includes(
+            o?.failure?.code ?? ""
+          );
+          this.fullscreenRestore && !this.upgradeFailed && o && ["failed", "offline"].includes(o.state) && !a && (this.upgradeFailed = !0, this.notice = "Main fullscreen upgrade failed; returning to selected profile.", this.config = this.fullscreenRestore, this.restart());
+        },
+        this.runtime
+      );
       this.session = r, this.updateVisibility(), r.start();
     })();
   }
   updateVisibility() {
-    this.session?.setVisible(!document.hidden && !this.offscreen, !this.offscreen);
+    this.session?.setVisible(
+      !document.hidden && !this.offscreen,
+      !this.offscreen
+    );
   }
   begin(e, t) {
     const s = this.session;
     if (s)
       if (e === "talk") {
-        const n = yo("audio.talk", s.config, s.snapshot, s.caps, s.camera ? { ...s.camera, privacy: s.controlState.privacy ?? s.camera.privacy } : void 0);
-        if (s.privateCamera || !n.enabled || s.denied.has("audio.talk")) return;
+        const n = yo(
+          "audio.talk",
+          s.config,
+          s.snapshot,
+          s.caps,
+          s.camera ? {
+            ...s.camera,
+            privacy: s.controlState.privacy ?? s.camera.privacy
+          } : void 0
+        );
+        if (s.privateCamera || !n.enabled || s.denied.has("audio.talk"))
+          return;
         this.config?.audio.talk_mode === "toggle" && (s.snapshot.talk.active || s.snapshot.talk.pending) ? s.stopTalk() : s.startTalk();
       } else t && s.startPtz(t, this.speed);
   }
@@ -33200,7 +34111,8 @@ class Kx extends oi {
   }
   async snapshot() {
     const e = this.session, t = await e?.snapshotBlob();
-    if (!e || !t || e !== this.session || !this.isConnected) return;
+    if (!e || !t || e !== this.session || !this.isConnected)
+      return;
     this.clearDownload(), this.downloadUrl = URL.createObjectURL(t);
     const s = document.createElement("a");
     s.href = this.downloadUrl;
@@ -33219,13 +34131,23 @@ class Kx extends oi {
     }
   }
   profile(e) {
-    this.config && (this.cancelInteractions(), this.fullscreenRestore = void 0, this.config = { ...this.config, profile: e.target.value }, this.restart());
+    this.config && (this.cancelInteractions(), this.fullscreenRestore = void 0, this.config = {
+      ...this.config,
+      profile: e.target.value
+    }, this.restart());
   }
   show(e) {
     return this.config?.controls[e] ?? e !== "refresh_source";
   }
   access(e) {
-    return af(e, this.session?.camera ? { ...this.session.camera, privacy: this.session.controlState.privacy ?? this.session.camera.privacy } : void 0, this.session?.denied);
+    return af(
+      e,
+      this.session?.camera ? {
+        ...this.session.camera,
+        privacy: this.session.controlState.privacy ?? this.session.camera.privacy
+      } : void 0,
+      this.session?.denied
+    );
   }
   button(e, t, s) {
     const n = this.access(t);
@@ -33251,7 +34173,34 @@ class Kx extends oi {
   render() {
     const e = this.config;
     if (!e) return ce;
-    const t = this.session, s = t?.snapshot, n = yo("audio.listen", e, s ?? { state: "idle" }, t?.caps, t?.camera ? { ...t.camera, privacy: t.controlState.privacy ?? t.camera.privacy } : void 0), r = yo("audio.talk", e, s ?? { state: "idle" }, t?.caps, t?.camera ? { ...t.camera, privacy: t.controlState.privacy ?? t.camera.privacy } : void 0), o = su(e, t?.camera, /* @__PURE__ */ new Date(), document.fullscreenElement === this), a = this.access("ptz"), l = this.renderRoot?.querySelector("video"), c = l?.videoWidth || 16, u = l?.videoHeight || 9;
+    const t = this.session, s = t?.snapshot, n = yo(
+      "audio.listen",
+      e,
+      s ?? {
+        state: "idle"
+      },
+      t?.caps,
+      t?.camera ? {
+        ...t.camera,
+        privacy: t.controlState.privacy ?? t.camera.privacy
+      } : void 0
+    ), r = yo(
+      "audio.talk",
+      e,
+      s ?? {
+        state: "idle"
+      },
+      t?.caps,
+      t?.camera ? {
+        ...t.camera,
+        privacy: t.controlState.privacy ?? t.camera.privacy
+      } : void 0
+    ), o = su(
+      e,
+      t?.camera,
+      /* @__PURE__ */ new Date(),
+      document.fullscreenElement === this
+    ), a = this.access("ptz"), l = this.renderRoot?.querySelector("video"), c = l?.videoWidth || 16, u = l?.videoHeight || 9;
     return ge`<ha-card>
       <header>${e.title ?? e.stream}</header>
       <div class="viewport" style=${`aspect-ratio:${e.layout.aspect_ratio}`}>
@@ -33283,15 +34232,21 @@ class Kx extends oi {
         </div>
         ${this.show("microphone") ? ge`<div class="hint" id=${`${this.scope}-mic-hint`}>${r.reason}</div><div role="status" class=${s?.talk.active ? "mic" : "hint"}>${s?.talk.active ? "Microphone active" : s?.talk.pending ? "Waiting for microphone permission…" : "Microphone off"} ${s?.talk.level !== void 0 ? ge`<meter min="0" max="1" .value=${s.talk.level} aria-label="Local microphone level"></meter>` : ce}</div>` : ce}
         ${this.show("speaker") ? ge`<label>Speaker volume <input aria-label="Speaker volume" type="range" min="0" max="1" step="0.05" .value=${String(e.audio.volume)} @input=${(h) => {
-      this.config && (this.config.audio.volume = Number(h.target.value)), this.requestUpdate();
+      this.config && (this.config.audio.volume = Number(
+        h.target.value
+      )), this.requestUpdate();
     }}></label>` : ce}
         ${this.show("profile") ? ge`<label>Source profile <select aria-label="Source profile" .value=${e.profile} ?disabled=${!t?.camera || !!e.source} @change=${this.profile}><option value="main">Main</option><option value="sub" ?disabled=${!t?.camera?.sources.sub}>Sub</option></select></label>` : ce}
         ${this.show("zoom") ? ge`<details><summary>Digital zoom / pan (local)</summary><label>Zoom <input type="range" min="1" max="5" step="0.1" .value=${String(this.zoom)} @input=${(h) => {
       this.zoom = Number(h.target.value), this.requestUpdate();
-    }}></label>${["X", "Y"].map((h) => ge`<label>Pan ${h}<input type="range" min="-40" max="40" .value=${String(h === "X" ? this.panX : this.panY)} @input=${(d) => {
-      const f = Number(d.target.value);
-      h === "X" ? this.panX = f : this.panY = f, this.requestUpdate();
-    }}></label>`)}<button @click=${() => {
+    }}></label>${["X", "Y"].map(
+      (h) => ge`<label>Pan ${h}<input type="range" min="-40" max="40" .value=${String(h === "X" ? this.panX : this.panY)} @input=${(d) => {
+        const f = Number(
+          d.target.value
+        );
+        h === "X" ? this.panX = f : this.panY = f, this.requestUpdate();
+      }}></label>`
+    )}<button @click=${() => {
       this.zoom = 1, this.panX = 0, this.panY = 0, this.requestUpdate();
     }}>Reset view</button><p class="hint">Motorized PTZ is separate. Fisheye/ePTZ is unavailable in this viewer contract.</p></details>` : ce}
         ${this.show("ptz") ? ge`<details @toggle=${(h) => {
@@ -33300,7 +34255,24 @@ class Kx extends oi {
           <label>Speed <input type="range" min="0.05" max="1" step="0.05" .value=${String(this.speed)} @input=${(h) => {
       this.speed = Number(h.target.value);
     }}></label>
-          <div class="ptz">${[["Up left", { x: -1, y: 1 }], ["Up", { y: 1 }], ["Up right", { x: 1, y: 1 }], ["Left", { x: -1 }], ["Down", { y: -1 }], ["Right", { x: 1 }], ["Zoom in", { z: 1 }], ["Zoom out", { z: -1 }]].map(([h, d]) => this.hold(h, "ptz", !a.enabled || t?.busy === !0 || (d && "z" in d ? t?.controlState.ptz?.zoom === !1 : t?.controlState.ptz?.pan === !1), a.reason, d))}</div>
+          <div class="ptz">${[
+      ["Up left", { x: -1, y: 1 }],
+      ["Up", { y: 1 }],
+      ["Up right", { x: 1, y: 1 }],
+      ["Left", { x: -1 }],
+      ["Down", { y: -1 }],
+      ["Right", { x: 1 }],
+      ["Zoom in", { z: 1 }],
+      ["Zoom out", { z: -1 }]
+    ].map(
+      ([h, d]) => this.hold(
+        h,
+        "ptz",
+        !a.enabled || t?.busy === !0 || (d && "z" in d ? t?.controlState.ptz?.zoom === !1 : t?.controlState.ptz?.pan === !1),
+        a.reason,
+        d
+      )
+    )}</div>
           <button ?disabled=${!a.enabled} @click=${() => {
       this.cancelInteractions(), t?.emergencyStop();
     }}>Stop PTZ / talk</button>
@@ -33311,13 +34283,21 @@ class Kx extends oi {
       this.preset = h.target.value;
     }}><option value="">Select preset</option>${t?.controlState.presets?.map((h) => ge`<option value=${h.id}>${h.name}</option>`)}</select></label>
           ${this.button("Go to preset", "ptz", () => {
-      this.preset && t?.mutate({ action: "ptz", command: "goto-preset", preset: this.preset });
+      this.preset && t?.mutate({
+        action: "ptz",
+        command: "goto-preset",
+        preset: this.preset
+      });
     })}
           <label>New preset name <input maxlength="63" .value=${this.presetName} @input=${(h) => {
       this.presetName = h.target.value;
     }}></label>
           ${this.button("Save preset", "ptz", () => {
-      this.presetName.trim() && t?.mutate({ action: "ptz", command: "save-preset", preset: this.presetName.trim() });
+      this.presetName.trim() && t?.mutate({
+        action: "ptz",
+        command: "save-preset",
+        preset: this.presetName.trim()
+      });
     })}
           ${this.button("Set home", "ptz", () => {
       t?.mutate({ action: "ptz", command: "set-home" });
@@ -33341,7 +34321,12 @@ class Kx extends oi {
         </div>
         ${this.show("timeline") ? o ? ge`<a href=${o} target="_blank" rel="noopener noreferrer" @click=${(h) => {
       if (!this.config) return;
-      const d = su(this.config, this.session?.camera, /* @__PURE__ */ new Date(), document.fullscreenElement === this);
+      const d = su(
+        this.config,
+        this.session?.camera,
+        /* @__PURE__ */ new Date(),
+        document.fullscreenElement === this
+      );
       d && (h.currentTarget.href = d);
     }}>${t?.camera ? "Open camera timeline in lightNVR" : "Open lightNVR"}</a>` : ge`<p class="hint">Set viewer_url to the confirmed lightNVR web UI URL to open its timeline.</p>` : ce}
       </div>
@@ -33351,14 +34336,22 @@ class Kx extends oi {
     return e.auth === "password-change" ? ge`<p role="alert">Change the password in lightNVR, then retry locally.</p>` : ge`<form @submit=${(t) => {
       t.preventDefault();
       const s = t.currentTarget, n = new FormData(s), r = String(n.get("username") ?? ""), o = String(n.get("password") ?? ""), a = String(n.get("otp") ?? "");
-      e.authBusy || (s.reset(), e.start(e.auth === "totp" ? void 0 : { username: r, password: o }, a || void 0));
+      e.authBusy || (s.reset(), e.start(
+        e.auth === "totp" ? void 0 : { username: r, password: o },
+        a || void 0
+      ));
     }}>${e.auth === "totp" ? ge`<label for=${`${this.scope}-otp`}>One-time code</label><input id=${`${this.scope}-otp`} name="otp" inputmode="numeric" autocomplete="one-time-code" required>` : ge`<label for=${`${this.scope}-user`}>Username</label><input id=${`${this.scope}-user`} name="username" autocomplete="username" required><label for=${`${this.scope}-pass`}>Password</label><input id=${`${this.scope}-pass`} name="password" type="password" autocomplete="current-password" required>`}<button type="submit" ?disabled=${e.authBusy}>Authenticate for this session</button></form>`;
   }
 }
 customElements.get("lightnvr-camera-card") || customElements.define("lightnvr-camera-card", Kx);
 const Ua = window;
 Ua.customCards ??= [];
-Ua.customCards.some((i) => i.type === "lightnvr-camera-card") || Ua.customCards.push({ type: "lightnvr-camera-card", name: "lightNVR Camera", description: "Authorized lightNVR live viewer with independent listening and talk.", preview: !0 });
+Ua.customCards.some((i) => i.type === "lightnvr-camera-card") || Ua.customCards.push({
+  type: "lightnvr-camera-card",
+  name: "lightNVR Camera",
+  description: "Authorized lightNVR live viewer with independent listening and talk.",
+  preview: !0
+});
 const jl = /* @__PURE__ */ Symbol.for("yaml.alias"), Ba = /* @__PURE__ */ Symbol.for("yaml.document"), bs = /* @__PURE__ */ Symbol.for("yaml.map"), mg = /* @__PURE__ */ Symbol.for("yaml.pair"), Xt = /* @__PURE__ */ Symbol.for("yaml.scalar"), Ai = /* @__PURE__ */ Symbol.for("yaml.seq"), wt = /* @__PURE__ */ Symbol.for("yaml.node.type"), _i = (i) => !!i && typeof i == "object" && i[wt] === jl, Sn = (i) => !!i && typeof i == "object" && i[wt] === Ba, Tn = (i) => !!i && typeof i == "object" && i[wt] === bs, Ve = (i) => !!i && typeof i == "object" && i[wt] === mg, Re = (i) => !!i && typeof i == "object" && i[wt] === Xt, An = (i) => !!i && typeof i == "object" && i[wt] === Ai;
 function Ke(i) {
   if (i && typeof i == "object")
@@ -37820,7 +38813,11 @@ function Zh(i) {
   return i instanceof VE ? i.issues.map((e) => `${e.path.map((s) => typeof s == "number" ? `[${s}]` : String(s)).join(".") || "configuration"}: ${e.code === "unrecognized_keys" ? "unsupported option; remove it or use a supported configuration version" : "invalid value or incompatible settings; review this field"}`).join("; ") : "Invalid configuration. Review supported fields, transport order, audio policy and retry limits.";
 }
 function tm() {
-  return ys({ type: "custom:lightnvr-camera-card", server: "/lightnvr/", stream: "select_camera" });
+  return ys({
+    type: "custom:lightnvr-camera-card",
+    server: "/lightnvr/",
+    stream: "select_camera"
+  });
 }
 function Ms(i) {
   const e = structuredClone(i);
@@ -37829,14 +38826,17 @@ function Ms(i) {
 function JL(i) {
   if (i.length > 1e5) throw new Error("Configuration is too large.");
   const e = QL(i, { uniqueKeys: !0, schema: "core" });
-  if (e.errors.length || e.warnings.length) throw new Error("Use plain YAML with unique keys and no custom tags.");
+  if (e.errors.length || e.warnings.length)
+    throw new Error("Use plain YAML with unique keys and no custom tags.");
   return e.toJS({ maxAliasCount: 0 });
 }
 function eR(i) {
   try {
     return aS(JL(i));
   } catch {
-    throw new Error("Legacy import rejected. Use supported server, url, mode, media, ui and native HA layout fields; video must be enabled. Check the server URL and transport/audio combination.");
+    throw new Error(
+      "Legacy import rejected. Use supported server, url, mode, media, ui and native HA layout fields; video must be enabled. Check the server URL and transport/audio combination."
+    );
   }
 }
 function Ha(i) {
@@ -37848,31 +38848,50 @@ function tR(i) {
     e[t] && /^[a-z][a-z0-9+.-]*:\/\//i.test(e[t]) && (e[t] = "REDACTED_SOURCE_URL");
   return e.password !== void 0 && (e.password = "REDACTED"), e.username !== void 0 && (e.username = "REDACTED"), e.ice_servers && (e.ice_servers = e.ice_servers.map((t) => ({
     ...t,
-    urls: (Array.isArray(t.urls) ? t.urls : [t.urls]).map((s) => Ha(s)),
+    urls: (Array.isArray(t.urls) ? t.urls : [t.urls]).map(
+      (s) => Ha(s)
+    ),
     ...t.username === void 0 ? {} : { username: "REDACTED" },
     ...t.credential === void 0 ? {} : { credential: "REDACTED" }
   }))), e;
 }
 function sm(i, e, t) {
   if (e.status === "disabled" || e.privacy === !0 || e.capabilities["live.view"] === "denied")
-    throw new Error("Camera is disabled, private or live viewing is denied. Review its state in lightNVR.");
-  if (t === "sub" && !e.sources.sub) throw new Error("No managed substream is available. Choose main.");
+    throw new Error(
+      "Camera is disabled, private or live viewing is denied. Review its state in lightNVR."
+    );
+  if (t === "sub" && !e.sources.sub)
+    throw new Error("No managed substream is available. Choose main.");
   const s = structuredClone(i);
-  return delete s.source, delete s.camera_uuid, ys({ ...s, stream: e.name, ...e.uuid ? { camera_uuid: e.uuid } : {}, profile: t });
+  return delete s.source, delete s.camera_uuid, ys({
+    ...s,
+    stream: e.name,
+    ...e.uuid ? { camera_uuid: e.uuid } : {},
+    profile: t
+  });
 }
 function Wa(i, e, t) {
   const s = [];
   if (e) {
     for (const r of i.transports)
-      e.transports[r] === "denied" && s.push(`${r} is disabled by the server. Remove it from the transport order.`), e.go2rtc === "denied" && r !== "hls" && s.push("The server requires native HLS. Choose HLS only.");
-    i.transports.includes("hls") && (e.forceNativeHls === !0 || e.go2rtc === "denied") && i.hls.provider === "go2rtc" && s.push("The server requires native HLS. Choose native or auto provider."), e.audioDisabled === !0 && (i.audio.listen || i.audio.microphone) && s.push("Server audio is disabled. Turn off listening and microphone.");
+      e.transports[r] === "denied" && s.push(
+        `${r} is disabled by the server. Remove it from the transport order.`
+      ), e.go2rtc === "denied" && r !== "hls" && s.push("The server requires native HLS. Choose HLS only.");
+    i.transports.includes("hls") && (e.forceNativeHls === !0 || e.go2rtc === "denied") && i.hls.provider === "go2rtc" && s.push(
+      "The server requires native HLS. Choose native or auto provider."
+    ), e.audioDisabled === !0 && (i.audio.listen || i.audio.microphone) && s.push(
+      "Server audio is disabled. Turn off listening and microphone."
+    );
   }
   const n = i.hls.provider === "native" || e?.forceNativeHls === !0 || e?.go2rtc === "denied";
-  return i.transports.includes("hls") && n && (i.profile !== "main" || !i.audio.listen || !t || i.source !== void 0 && i.source !== t.sources.main) && s.push("Native HLS needs a discovered exact main camera source with listening enabled. Choose main/listen or a supported go2rtc provider."), i.audio.microphone && t?.backchannel === "denied" && s.push("This camera has no backchannel. Disable microphone."), i.audio.listen && t?.capabilities["audio.listen"] === "denied" && s.push("Listening is denied. Disable listening."), i.audio.microphone && t?.capabilities["audio.talk"] === "denied" && s.push("Talk is denied. Disable microphone."), [...new Set(s)];
+  return i.transports.includes("hls") && n && (i.profile !== "main" || !i.audio.listen || !t || i.source !== void 0 && i.source !== t.sources.main) && s.push(
+    "Native HLS needs a discovered exact main camera source with listening enabled. Choose main/listen or a supported go2rtc provider."
+  ), i.audio.microphone && t?.backchannel === "denied" && s.push("This camera has no backchannel. Disable microphone."), i.audio.listen && t?.capabilities["audio.listen"] === "denied" && s.push("Listening is denied. Disable listening."), i.audio.microphone && t?.capabilities["audio.talk"] === "denied" && s.push("Talk is denied. Disable microphone."), [...new Set(s)];
 }
 function sR(i, e, t, s, n = 2) {
   if (!e.length) throw new Error("Select at least one camera.");
-  if (!Number.isInteger(n) || n < 1 || n > 12) throw new Error("Grid columns must be 1–12.");
+  if (!Number.isInteger(n) || n < 1 || n > 12)
+    throw new Error("Grid columns must be 1–12.");
   const r = e.map((a) => {
     const l = Ms(sm(i, a, t));
     return delete l.password, delete l.username, l.ice_servers && (l.ice_servers = l.ice_servers.map((c) => ({
@@ -37885,7 +38904,9 @@ function sR(i, e, t, s, n = 2) {
   return `# REVIEW BEFORE USE: login credentials omitted; reauthenticate for session storage or add dashboard credentials.
 # ICE routing is preserved. Replace TURN username/credential placeholders and any REDACTED URL userinfo; playback may fail until restored.
 # Dashboard configuration readers can read saved credentials. UI-managed dashboards do not promise !secret support.
-` + em(s === "grid" ? { type: "grid", columns: n, square: !1, cards: r } : r);
+` + em(
+    s === "grid" ? { type: "grid", columns: n, square: !1, cards: r } : r
+  );
 }
 const iR = {
   auth: "Check username/password, then test again. Inline MFA requires the lightNVR UI.",
@@ -37922,7 +38943,10 @@ class nR {
     this.cancel(), this.error = "", this.migration = void 0;
     try {
       const s = ys(e);
-      return this.config = s, t && (this.credentials = { username: s.username ?? "", password: s.password ?? "" }, this.tested = !1, this.inventory = [], this.capabilities = void 0, this.selected.clear()), this.emit(Ms(s)), this.changed(), !0;
+      return this.config = s, t && (this.credentials = {
+        username: s.username ?? "",
+        password: s.password ?? ""
+      }, this.tested = !1, this.inventory = [], this.capabilities = void 0, this.selected.clear()), this.emit(Ms(s)), this.changed(), !0;
     } catch (s) {
       return this.error = Zh(s), this.changed(), !1;
     }
@@ -37931,7 +38955,11 @@ class nR {
     this.revision++, this.operation?.abort(), this.operation = void 0, this.client?.dispose(), this.client = void 0, this.busy = !1, this.challenge = void 0, this.tested = !1, this.changed();
   }
   begin() {
-    return this.cancel(), this.error = "", this.busy = !0, this.operation = new AbortController(), this.client = this.factory(Ms(this.config)), { revision: this.revision, signal: this.operation.signal, client: this.client };
+    return this.cancel(), this.error = "", this.busy = !0, this.operation = new AbortController(), this.client = this.factory(Ms(this.config)), {
+      revision: this.revision,
+      signal: this.operation.signal,
+      client: this.client
+    };
   }
   failure(e) {
     const t = qt(e);
@@ -37942,7 +38970,13 @@ class nR {
     let e;
     try {
       e = this.begin(), this.changed();
-      const t = await e.client.connect(this.credentials ?? (this.config.username === void 0 ? void 0 : { username: this.config.username, password: this.config.password ?? "" }), { signal: e.signal });
+      const t = await e.client.connect(
+        this.credentials ?? (this.config.username === void 0 ? void 0 : {
+          username: this.config.username,
+          password: this.config.password ?? ""
+        }),
+        { signal: e.signal }
+      );
       if (e.revision !== this.revision) return;
       if (t.kind === "totp-required") {
         this.challenge = t.challenge, this.status = "Enter the one-time code to finish testing.";
@@ -38026,22 +39060,127 @@ class nR {
     this.cancel(), this.credentials = void 0, this.migration = void 0;
   }
 }
-const rR = ["speaker", "microphone", "fullscreen", "snapshot", "transport", "profile", "zoom", "ptz", "daynight", "recording", "privacy", "detection", "refresh_source", "timeline"], oR = [
-  { title: "Playback and fallback", fields: [["transports", "Ordered transports (comma separated; one forces that mode)"], ["hls.provider", "HLS provider", ["auto", "go2rtc", "native"]], ["source", "Advanced exact source override"], ["go2rtc_path", "Managed go2rtc path"], ["viewer_url", "NVR web UI URL (optional; required for links with restricted API proxy)"]] },
-  { title: "Timeouts (milliseconds)", fields: [["timeouts.connection_ms", "Connection timeout (or inherit)"], ["timeouts.ice_grace_ms", "ICE recovery grace"], ["timeouts.webrtc_ms", "WebRTC override"], ["timeouts.mse_ms", "MSE override"], ["timeouts.hls_ms", "HLS override"]] },
-  { title: "Retry", fields: [["retry.base_ms", "Base milliseconds"], ["retry.cap_ms", "Cap milliseconds"], ["retry.attempts", "Attempts"], ["retry.jitter", "Jitter (0–1)"]] },
-  { title: "Audio and talk", fields: [["audio.enabled", "Audio enabled"], ["audio.listen", "Request listening"], ["audio.muted", "Start muted"], ["audio.microphone", "Allow microphone control"], ["audio.talk_mode", "Talk mode", ["ptt", "toggle"]], ["audio.volume", "Volume (0–1)"]] },
-  { title: "Controls (default follows viewer capability)", fields: rR.map((i) => [`controls.${i}`, i.replaceAll("_", " "), ["default", "true", "false"]]) },
-  { title: "Layout and visibility", fields: [["layout.aspect_ratio", "Aspect ratio (number)"], ["layout.object_fit", "Video fit", ["contain", "cover"]], ["layout.fullscreen_main", "Use main in fullscreen"], ["playback_visibility.hidden", "When document hidden", ["pause", "continue"]], ["playback_visibility.offscreen", "When offscreen", ["pause", "continue"]]] }
-], aR = /* @__PURE__ */ new Set(["server", "username", "password", "auth", "credential_storage", "go2rtc_path"]), Xh = /* @__PURE__ */ new Set(["timeouts.webrtc_ms", "timeouts.mse_ms", "timeouts.hls_ms"]);
+const rR = [
+  "speaker",
+  "microphone",
+  "fullscreen",
+  "snapshot",
+  "transport",
+  "profile",
+  "zoom",
+  "ptz",
+  "daynight",
+  "recording",
+  "privacy",
+  "detection",
+  "refresh_source",
+  "timeline"
+], oR = [
+  {
+    title: "Playback and fallback",
+    fields: [
+      [
+        "transports",
+        "Ordered transports (comma separated; one forces that mode)"
+      ],
+      ["hls.provider", "HLS provider", ["auto", "go2rtc", "native"]],
+      ["source", "Advanced exact source override"],
+      ["go2rtc_path", "Managed go2rtc path"],
+      [
+        "viewer_url",
+        "NVR web UI URL (optional; required for links with restricted API proxy)"
+      ]
+    ]
+  },
+  {
+    title: "Timeouts (milliseconds)",
+    fields: [
+      ["timeouts.connection_ms", "Connection timeout (or inherit)"],
+      ["timeouts.ice_grace_ms", "ICE recovery grace"],
+      ["timeouts.webrtc_ms", "WebRTC override"],
+      ["timeouts.mse_ms", "MSE override"],
+      ["timeouts.hls_ms", "HLS override"]
+    ]
+  },
+  {
+    title: "Retry",
+    fields: [
+      ["retry.base_ms", "Base milliseconds"],
+      ["retry.cap_ms", "Cap milliseconds"],
+      ["retry.attempts", "Attempts"],
+      ["retry.jitter", "Jitter (0–1)"]
+    ]
+  },
+  {
+    title: "Audio and talk",
+    fields: [
+      ["audio.enabled", "Audio enabled"],
+      ["audio.listen", "Request listening"],
+      ["audio.muted", "Start muted"],
+      ["audio.microphone", "Allow microphone control"],
+      ["audio.talk_mode", "Talk mode", ["ptt", "toggle"]],
+      ["audio.volume", "Volume (0–1)"]
+    ]
+  },
+  {
+    title: "Controls (default follows viewer capability)",
+    fields: rR.map((i) => [
+      `controls.${i}`,
+      i.replaceAll("_", " "),
+      ["default", "true", "false"]
+    ])
+  },
+  {
+    title: "Layout and visibility",
+    fields: [
+      ["layout.aspect_ratio", "Aspect ratio (number)"],
+      ["layout.object_fit", "Video fit", ["contain", "cover"]],
+      ["layout.fullscreen_main", "Use main in fullscreen"],
+      [
+        "playback_visibility.hidden",
+        "When document hidden",
+        ["pause", "continue"]
+      ],
+      [
+        "playback_visibility.offscreen",
+        "When offscreen",
+        ["pause", "continue"]
+      ]
+    ]
+  }
+], aR = /* @__PURE__ */ new Set([
+  "server",
+  "username",
+  "password",
+  "auth",
+  "credential_storage",
+  "go2rtc_path"
+]), Xh = /* @__PURE__ */ new Set([
+  "timeouts.webrtc_ms",
+  "timeouts.mse_ms",
+  "timeouts.hls_ms"
+]);
 function Qh(i, e) {
-  return e.split(".").reduce((t, s) => t?.[s], i);
+  return e.split(".").reduce(
+    (t, s) => t?.[s],
+    i
+  );
 }
 class im extends oi {
   constructor() {
-    super(...arguments), this.factory = fl, this.model = new nR(() => this.requestUpdate(), (e) => {
-      this.clearPreview(), this.yaml = "", this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e }, bubbles: !0, composed: !0 }));
-    }, (e) => this.factory(e)), this.search = "", this.profile = "main", this.legacy = "", this.yaml = "", this.otp = "", this.previewUrl = "", this.previewRevision = 0, this.previewLabel = "";
+    super(...arguments), this.factory = fl, this.model = new nR(
+      () => this.requestUpdate(),
+      (e) => {
+        this.clearPreview(), this.yaml = "", this.dispatchEvent(
+          new CustomEvent("config-changed", {
+            detail: { config: e },
+            bubbles: !0,
+            composed: !0
+          })
+        );
+      },
+      (e) => this.factory(e)
+    ), this.search = "", this.profile = "main", this.legacy = "", this.yaml = "", this.otp = "", this.previewUrl = "", this.previewRevision = 0, this.previewLabel = "";
   }
   static {
     this.styles = td`
@@ -38078,7 +39217,9 @@ class im extends oi {
     let o = s;
     for (const l of n) o = o[l];
     const a = Qh(this.model.config, e);
-    t === "" && (Xh.has(e) || ["source", "viewer_url", "username", "password", "title"].includes(e)) ? delete o[r] : e.startsWith("controls.") ? t === "default" ? delete o[r] : o[r] = t === "true" : e === "transports" ? o[r] = String(t).split(",").map((l) => l.trim()) : typeof a == "number" || Xh.has(e) || e === "timeouts.connection_ms" ? o[r] = t === "inherit" ? t : Number(t) : o[r] = t, this.model.edit(s, aR.has(e));
+    t === "" && (Xh.has(e) || ["source", "viewer_url", "username", "password", "title"].includes(
+      e
+    )) ? delete o[r] : e.startsWith("controls.") ? t === "default" ? delete o[r] : o[r] = t === "true" : e === "transports" ? o[r] = String(t).split(",").map((l) => l.trim()) : typeof a == "number" || Xh.has(e) || e === "timeouts.connection_ms" ? o[r] = t === "inherit" ? t : Number(t) : o[r] = t, this.model.edit(s, aR.has(e));
   }
   field(e, t, s) {
     const n = Qh(this.model.config, e);
@@ -38094,14 +39235,22 @@ class im extends oi {
     }
     const t = this.previewRevision, s = new AbortController();
     this.previewAbort = s;
-    const n = { ...this.model.config, stream: e.name, profile: this.profile };
+    const n = {
+      ...this.model.config,
+      stream: e.name,
+      profile: this.profile
+    };
     delete n.source, delete n.camera_uuid, e.uuid && (n.camera_uuid = e.uuid);
     let r;
     try {
       r = this.factory(n), this.previewDispose = () => r?.dispose();
       const o = dl(n, this.model.inventory), a = new URL(r.mediaUrls(o, !1).snapshot), l = new URL(r.profile.baseUrl);
-      if (a.origin !== l.origin || !a.pathname.startsWith(l.pathname)) throw new Error();
-      const c = await r.authorizedFetch(a.pathname.slice(l.pathname.length) + a.search, { signal: s.signal });
+      if (a.origin !== l.origin || !a.pathname.startsWith(l.pathname))
+        throw new Error();
+      const c = await r.authorizedFetch(
+        a.pathname.slice(l.pathname.length) + a.search,
+        { signal: s.signal }
+      );
       if (!c.ok)
         throw await c.body?.cancel(), new Error();
       if (!c.headers.get("content-type")?.startsWith("image/"))
@@ -38117,9 +39266,15 @@ class im extends oi {
   }
   generate(e) {
     try {
-      const t = this.model.inventory.filter((s) => this.model.selected.has(s.name));
+      const t = this.model.inventory.filter(
+        (s) => this.model.selected.has(s.name)
+      );
       for (const s of t) {
-        const n = { ...this.model.config, stream: s.name, profile: this.profile };
+        const n = {
+          ...this.model.config,
+          stream: s.name,
+          profile: this.profile
+        };
         delete n.source;
         const r = Wa(n, this.model.capabilities, s);
         if (r.length) throw new Error(r.join(" "));
@@ -38131,7 +39286,13 @@ class im extends oi {
     this.requestUpdate();
   }
   render() {
-    const e = this.model, t = e.inventory.filter((r) => r.name.toLocaleLowerCase().includes(this.search.toLocaleLowerCase())), s = e.inventory.find((r) => r.name === e.config.stream), n = Wa(e.config, e.capabilities, s);
+    const e = this.model, t = e.inventory.filter(
+      (r) => r.name.toLocaleLowerCase().includes(this.search.toLocaleLowerCase())
+    ), s = e.inventory.find((r) => r.name === e.config.stream), n = Wa(
+      e.config,
+      e.capabilities,
+      s
+    );
     return ge`
       <p class="hint">Full browser playback requires a same-origin proxy prefix on the Home Assistant origin, routed to lightNVR with isolated session cookies and WebSocket support. Remote HTTPS alone does not provide this. Never expose raw go2rtc.</p>
       <fieldset><legend>1. Connect</legend>
@@ -38167,16 +39328,18 @@ class im extends oi {
         <label>Search ${e.inventory.length} cameras<input type="search" .value=${this.search} @input=${(r) => {
       this.search = r.target.value, this.requestUpdate();
     }}></label>
-        <div class="inventory">${t.map((r) => ge`<div class="camera">
+        <div class="inventory">${t.map(
+      (r) => ge`<div class="camera">
           <label><input type="checkbox" aria-label=${`Include ${r.name} in YAML`} ?disabled=${!this.available(r)} .checked=${e.selected.has(r.name)} @change=${(o) => {
-      o.target.checked ? e.selected.add(r.name) : e.selected.delete(r.name), this.yaml = "", this.requestUpdate();
-    }}>${r.name}</label>
+        o.target.checked ? e.selected.add(r.name) : e.selected.delete(r.name), this.yaml = "", this.requestUpdate();
+      }}>${r.name}</label>
           <span class="hint">${r.status}; privacy ${String(r.privacy)}; sub ${r.sources.sub ? "available" : "unavailable"}; talk ${r.backchannel}; live ${r.capabilities["live.view"] ?? "unknown"}</span>
           <button ?disabled=${!this.available(r)} @click=${() => {
-      e.saveCamera(r, this.profile) && (this.profile = e.config.profile);
-    }}>Use for this card</button>
+        e.saveCamera(r, this.profile) && (this.profile = e.config.profile);
+      }}>Use for this card</button>
           <button ?disabled=${!this.available(r) || r.capabilities.snapshot === "denied"} @click=${() => this.preview(r)}>Preview ${this.profile} snapshot</button>
-        </div>`)}</div>
+        </div>`
+    )}</div>
         <p class="hint">Disabled/private cameras cannot be selected. Offline cameras may recover. Snapshot previews are read-only images: no microphone, player, PTZ, recording or privacy mutations.</p>
         ${this.previewUrl ? ge`<img src=${this.previewUrl} alt=${this.previewLabel}><button @click=${() => this.clearPreview()}>Close preview</button>` : ce}
       </fieldset>
@@ -38204,7 +39367,9 @@ class im extends oi {
 }
 customElements.get("lightnvr-camera-card-editor") || customElements.define("lightnvr-camera-card-editor", im);
 function lR() {
-  return document.createElement("lightnvr-camera-card-editor");
+  return document.createElement(
+    "lightnvr-camera-card-editor"
+  );
 }
 const Jh = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,

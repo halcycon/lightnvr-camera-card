@@ -1,6 +1,6 @@
 # Verification and support boundaries
 
-Evidence recorded on 2026-11-10. All media came from generated sources in owned, isolated fixtures. No production NVR or physical camera was accessed. An untested result below limits the corresponding support claim; it is not a synthetic pass.
+Evidence updated on 2026-11-11. All media came from generated sources in owned, isolated fixtures. No production NVR or physical camera was accessed. An untested result below limits the corresponding support claim; it is not a synthetic pass.
 
 ## Tested versions
 
@@ -46,6 +46,14 @@ No public release tag or catalog submission is created by these checks. A defaul
 
 ## Development artifact
 
-The final standalone module is `dist/lightnvr-camera-card.js` (1,392,805 bytes). Its SHA-256 is `d25c7444415d981cea02f6b29a6da708ba385c3aa653b374bab82c73ecb2b14a`. The matching release-shape check requires the complete current LICENSE and THIRD_PARTY_NOTICES text inside the JS.
+The final standalone module is `dist/lightnvr-camera-card.js` (1,401,363 bytes). Its SHA-256 is `d0e938a115c556352392d9b3e5f2b3ff8922b904799506c07f891fa04cd2672f`. The matching release-shape check requires the complete current LICENSE and THIRD_PARTY_NOTICES text inside the JS.
 
 The prior HA-tested artifact had SHA-256 `e3bd48505c762870181263c347b2d1d69affbc224cc22862b4b04b82556c6e67`. Rebuilding with the expanded license banner left all JavaScript after that banner byte-identical. The [security review](security-review.md) records the proxy hardening and the three specific bundled-library false positives; no CodeQL query or path was disabled.
+
+## Tailor tooling follow-up — 2026-11-11
+
+Tailor 0.6.0 was checksum-verified, previewed and applied again to finish native tooling adoption; see [development and ownership](development.md). `just lint` (Actionlint/Oxlint/Prettier/TypeScript), `just test` (511 tests) and `just build`/release checks passed locally. The dependency audit returned zero findings. Three existing authority/IPv6/upstream-TLS regressions passed independently.
+
+The rebuilt standalone module parses with zero external imports. Its canonical JavaScript syntax tree is identical to the prior `d25c7444415d981cea02f6b29a6da708ba385c3aa653b374bab82c73ecb2b14a` artifact after ignoring locations and literal spelling. Formatting changed emitted whitespace, so the actual HA 2026.11.1 suite was rerun: all 13 checks passed against the current artifact SHA above. An initial Sections timeout did not recur in either the diagnostic rerun or final standard Playwright run; no product code fix was made for that timeout. Legacy HA evidence remains the earlier baseline.
+
+The new Nix CI job evaluates the committed flake and runs the actual lint/test/build commands inside its development shell. Its hosted result is published alongside the regular Node/HACS jobs in [Card CI](https://github.com/halcycon/lightnvr-camera-card/actions/workflows/card-ci.yml). Local Nix is not installed on the development host, so the hosted result is the Nix verification source.

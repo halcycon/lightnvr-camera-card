@@ -300,3 +300,13 @@ The explicitly requested parallel-task-herdr skill governs native workers, exclu
 ## Execution status
 
 T1–T10 implementation and local integration verification are complete within the explicitly recorded development scope. Authenticated store installation, device-specific behavior and endurance checks remain external acceptance gates; no corresponding support certification is claimed. See [verification](docs/verification.md) for current actual results and device/store limits, and [handoff](docs/HANDOFF.md) for the operator's next steps. Public release tags and catalog submissions have not been made. Private execution history is retained in the durable run, not published here.
+
+
+### T11: Tailor repository layout follow-up
+
+- **depends_on**: [T10]
+- **status**: In progress — actual Tailor application and local verification complete; hosted Nix/CI checks pending.
+- **description**: Audit the actual project against wimpysworld/tailor and use its CLI to complete the intended layout/tooling, reconciling earlier Tailor records. Preserve implemented behavior, licensing, security and private-file exclusions. Scaffold configuration alone is not completion.
+- **validation**: Exact Tailor version/preview/application results and layout diffs; affected project and hosted checks. No worktree reset or release/catalog publication.
+
+T11 local evidence: checksum-verified Tailor 0.6.0 measure/baste/alter; native project hooks, Oxlint/Prettier policies, PR template and locked Nix inputs adopted. Native lint, 511 unit tests, build/release checks and the fresh current-HA 13-check matrix pass. Local file preview has converged; two intentional mode overrides and GitHub capability/reapply notices are documented.

@@ -73,3 +73,7 @@ The current-HA matrix used generated media and verified MSE/HLS decoding at 1920
 The detailed [verification matrix](docs/verification.md) separates actual results from untested devices and store installation. Maintainers can use the [operator handoff](docs/HANDOFF.md) and [reproducible fixture suite](tests/e2e/README.md).
 
 Use [troubleshooting](docs/troubleshooting.md) for deployment failures. [Release preparation](docs/hacs-release.md) lists the remaining installation, browser and marketplace review gates. GPL-3.0-or-later; see [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Development
+
+This repository uses Tailor’s native `just lint`, `just test` and `just build` workflow, with project hooks for the card. See [development and Tailor layout](docs/development.md) for setup, ownership and the verified adoption record.

@@ -7,3 +7,8 @@
 /.env
 /.env.*
 !/.env.example
+
+# Local Nix/direnv outputs; preserve the existing project/private exclusions.
+/.direnv/
+/result
+/result-*

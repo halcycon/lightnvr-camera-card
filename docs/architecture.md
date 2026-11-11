@@ -41,21 +41,21 @@ Audio request is intersected with server instance policy and separate listen/tal
 
 Node 22.22.2/npm 11.8.0 are pinned. Vite 7.3.8 supports Node >=22.12 (also ^20.19); TypeScript 5.9.3 is the selected stable compiler, with no native TS7 requirement. Lit 3.3.1, hls.js 1.7.4, Zod 4.6.7, Vitest 4.1.12, YAML 2.9.1, happy-dom 21.0.4 and Playwright 1.56.1 are locked. Engine metadata was checked with `npm view` and installed versions with `npm ls --depth=0`.
 
-`npm run build` targets T7's future `src/index.ts`. Workers set `LIGHTNVR_BUILD_DIR=/tmp/<task-specific-directory>`; the safe default is `/tmp/lightnvr-T1-build`, never shared dist. T1 verifies concrete compilation with `LIGHTNVR_BUILD_ENTRY=src/contracts/index.ts LIGHTNVR_BUILD_DIR=/tmp/lightnvr-T1-contract-build npm run build`. This contract-only output is not an installable card. Coordinator T10 alone may explicitly choose dist after integration. `check:release` verifies a single module, no remote static/dynamic imports or sourcemap, required files and HACS filename; real HACS installation remains T10 evidence.
+`just build` invokes the project hook to build the existing `src/index.ts` card and validate the standalone module. The default output is `dist`; set `LIGHTNVR_BUILD_DIR` to use a separate temporary directory for verification. `check:release` requires exactly one module, complete embedded notices, no remote imports or sourcemap, and matching HACS metadata. Actual store installation remains an explicit untested support gate. See [development setup](development.md).
 
 Validation: `npm ci`, `npm run typecheck`, `npm run lint`, `npm run test:unit -- tests/contracts`. Real upstream probing is separate and fails with exit 2/INCOMPLETE without an isolated fixture. It never substitutes mocked responses for upstream proof. See [upstream receipt](upstream-contract.md).
 
 Primary references checked: [Vite 7 runtime/build docs](https://v7.vite.dev/guide/), [TypeScript 5.9](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-9.html), [Home Assistant custom-card API](https://contributors.home-assistant.io/frontend/custom-ui/card/), [HACS plugin packaging](https://hacs.xyz/docs/publish/plugin/), [hls.js 1.7.4 API](https://raw.githubusercontent.com/video-dev/hls.js/v1.7.4/docs/API.md).
 
 
-## Coordinator security update and transport handoff
+## Dependency remediation history and transport handoff
 
 After T2/T3 verification, dependency advisories required Zod 4.6.7, Vite 7.3.8,
 Vitest 4.1.12 and typescript-eslint 8.72.2. npm 10.9.7 failed resolving the new
 peer graph; npm 11.8.0 resolved it with Node 22.22.2. The current manifest/lockfile
 are authoritative; the original T1 receipt retains its historical versions.
 Nested object defaults now use Zod 4 prefaults so configuration defaults and
-round trips stay unchanged. The scoped minimatch override affects only
+round trips stay unchanged. At that stage, the scoped minimatch override affected only
 @typescript-eslint/typescript-estree, preserving ESLint's legacy minimatch API.
 YAML 2.9.1 supplies safe editor serialization; happy-dom 21.0.4 supplies DOM unit
 tests. Install with `npx --yes npm@11.8.0 ci` when the system npm is older.
@@ -75,3 +75,7 @@ a second player. Never resume microphone transmission with that gesture.
 The optional viewer_url config is an explicit NVR web-UI base for timeline/open links. The scoped API/media proxy intentionally does not expose lightNVR HTML/assets. UI links must be hidden unless viewer_url is configured or a direct, known external server root can be used; never imply that the restricted API prefix serves the whole NVR UI.
 
 Native HA grid_options, legacy layout_options, view_layout, condition-array visibility and index/view_index/disabled metadata are preserved in configuration/editor/migration/YAML round trips and excluded from media identity. Playback policy uses playback_visibility. The pre-release object visibility alias normalizes to playback_visibility when unambiguous. HA owns layout/condition evaluation; the card never treats metadata as a media URL or authorization policy.
+
+## Current development tooling
+
+The dependency-remediation notes above describe the earlier ESLint baseline. The explicit Tailor adoption now uses locked Oxlint/Prettier through the native Just workflow, with TypeScript, unit tests and build/release checks in project hooks. ESLint and its minimatch override are no longer dependencies. See [development and Tailor layout](development.md).

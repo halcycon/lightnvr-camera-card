@@ -200,14 +200,15 @@ labels:
 #     value: ""
 
 swatches:
+  # Tailor replaces this whole file; keep the project npm update group too.
   - path: .github/dependabot.yml
-    alteration: first-fit
+    alteration: never
 
   - path: .github/FUNDING.yml
     alteration: first-fit
 
   - path: .github/ISSUE_TEMPLATE/bug_report.yml
-    alteration: first-fit
+    alteration: always
 
   - path: .github/ISSUE_TEMPLATE/feature_request.yml
     alteration: always
@@ -216,7 +217,7 @@ swatches:
     alteration: first-fit
 
   - path: .github/pull_request_template.md
-    alteration: never
+    alteration: first-fit
 
   - path: SECURITY.md
     alteration: always

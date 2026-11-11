@@ -1,7 +1,7 @@
 # Managed by Tailor: nix/javascript.nix
 { pkgs }:
 [
-  pkgs.nodejs_22 # Match .nvmrc; preserve this version when reviewing Tailor updates.
+  pkgs.nodejs
   pkgs.oxlint
   pkgs.prettier
 ]

@@ -1,4 +1,4 @@
-import { css } from 'lit';
+import { css } from "lit";
 export const viewerStyles = css`
   :host { display:block; min-width:0; height:100%; color:var(--primary-text-color,#222); font-family:var(--ha-font-family,inherit); }
   ha-card { display:flex; flex-direction:column; height:100%; overflow:hidden; background:var(--ha-card-background,var(--card-background-color,#fff)); border-radius:var(--ha-card-border-radius,12px); }
