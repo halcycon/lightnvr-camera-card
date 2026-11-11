@@ -329,6 +329,15 @@ export async function fixtureSafety() {
     assert.throws(() =>
       createRouter({ trustedPeers: [], origins: [], scopes: [] }),
     );
+    assert.throws(
+      () =>
+        createRouter({
+          trustedPeers: ["127.0.0.1"],
+          origins: ["https://ha.example.test"],
+          scopes: [{ ...scope, forwardAuthority: "arbitrary" }],
+        }),
+      /Invalid scope/,
+    );
     const denied = createRouter({
       trustedPeers: ["192.0.2.1"],
       origins: ["https://ha.example.test"],
@@ -394,6 +403,7 @@ export async function upstreamSmoke() {
       prefix: "/lightnvr/front/",
       cookieName: "lnvr_front_session",
       upstream: fixture.origin,
+      forwardAuthority: "upstream",
     },
     {
       prefix: "/lightnvr/back/",
@@ -987,6 +997,10 @@ export async function upstreamSmoke() {
       browser: browser.version(),
       upstream: sourceRevision,
       checks,
+      forwardAuthorities: scopes.map((scope) => ({
+        prefix: scope.prefix,
+        mode: scope.forwardAuthority ?? "public",
+      })),
       nativeSegment:
         "passed: generated local TS through real upstream native handler",
       boundaries: [

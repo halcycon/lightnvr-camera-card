@@ -1,6 +1,6 @@
 # lightNVR Camera Card
 
-A Home Assistant dashboard card for an existing lightNVR server and its managed go2rtc instance. Discover authorized cameras, watch independent cards in native HA layouts, listen, and use WebRTC push-to-talk where the server, camera and browser permit it. No extra go2rtc add-on or camera registration is required. The single ES module bundles its runtime dependencies, including hls.js; it loads no runtime code from a CDN.
+A Home Assistant dashboard card for an existing lightNVR server and its managed go2rtc instance. **lightNVR can run on another machine or at an externally reachable HTTPS address; no Home Assistant Add-on/App is required.** Discover authorized cameras, watch independent cards in native HA layouts, listen, and use WebRTC push-to-talk where the server, camera and browser permit it. No extra go2rtc add-on or camera registration is required. The single ES module bundles its runtime dependencies, including hls.js; it loads no runtime code from a CDN.
 
 **Two-way audio requires Home Assistant to be opened in a secure context (normally trusted HTTPS), microphone permission, HTTPS/WSS media signaling for the HTTPS dashboard, and a compatible camera with lightNVR backchannel enabled and talk permission. A Traefik TLS sidecar can provide HTTPS to the NVR; it does not by itself secure the HA document or solve cross-origin MSE.**
 

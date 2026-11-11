@@ -59,3 +59,11 @@ The rebuilt standalone module parses with zero external imports. Its canonical J
 The new Nix CI job evaluates the committed flake and runs the actual lint/test/build commands inside its development shell. Its hosted result is published alongside the regular Node/HACS jobs in [Card CI](https://github.com/halcycon/lightnvr-camera-card/actions/workflows/card-ci.yml). Local Nix is not installed on the development host, so the hosted result is the Nix verification source.
 
 Hosted Tailor verification passed in [Card CI 42941363640](https://github.com/halcycon/lightnvr-camera-card/actions/runs/42941363640): Node build/HACS and Nix-shell jobs were successful. The Nix job asserted Tailor 0.6.0 and ran its health check, native lint, all 511 tests and card build/release checks. The downloaded hosted artifact byte-matched the HA-tested local module.
+
+## External NVR routing — 2026-11-11
+
+The connectivity guide now distinguishes browser origin from server location and includes a remote HTTPS upstream example. The helper's explicit `forwardAuthority: "upstream"` supports a separate hostname-routed NVR ingress after validating the HA-facing peer, Host and Origin. Default public-authority behavior remains available.
+
+`just lint` passed. All five proxy tests passed against a fresh isolated official lightNVR fixture. The TLS regression checked eight HTTP/WS requests across DNS, IPv4, IPv6 and an owned external-ingress model, including certificate/SNI validation and six hostile-Origin rejections before forwarding. A further real-server smoke run with upstream authority translation enabled on the main media prefix passed login, inventory, authenticated WSS, SDP 201, HLS master/media/init/segments, native HLS, session isolation, logout, expiry and denial checks. The sibling prefix retained default public authority. The example router configuration also passed validation.
+
+These checks use generated media and owned services. The external TLS ingress is modeled locally; an Internet-hosted production NVR, NAT/TURN, Companion and physical camera talk were not tested by this change. The card bundle is unchanged.

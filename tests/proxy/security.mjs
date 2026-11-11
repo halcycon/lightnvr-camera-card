@@ -375,23 +375,31 @@ export async function tlsUpstreamIdentity() {
     const key = await readFile(dir + "/key.pem"),
       cert = await readFile(dir + "/cert.pem");
     function ownedTLS() {
-      const server = https.createServer({ key, cert }, (req, res) => {
-        seen.push({
-          method: "HTTP",
+      function observe(req, method) {
+        const record = {
+          method,
           host: req.headers.host,
+          origin: req.headers.origin,
+          forwardedHost: req.headers["x-forwarded-host"],
+          forwardedProto: req.headers["x-forwarded-proto"],
           sni: req.socket.servername || "",
           path: req.url,
-        });
+        };
+        seen.push(record);
+        // Model a remote hostname-routed HTTPS ingress and its same-origin gateway.
+        return (
+          !req.url.includes("external=1") ||
+          (req.headers.host === `localhost:${req.socket.localPort}` &&
+            req.headers.origin === `https://${req.headers.host}`)
+        );
+      }
+      const server = https.createServer({ key, cert }, (req, res) => {
+        res.statusCode = observe(req, "HTTP") ? 200 : 421;
         res.end("owned upstream TLS");
       });
       server.on("upgrade", (req, socket) => {
-        seen.push({
-          method: "WS",
-          host: req.headers.host,
-          sni: req.socket.servername || "",
-          path: req.url,
-        });
-        socket.end("HTTP/1.1 401 Rejected\r\nConnection: close\r\n\r\n");
+        const status = observe(req, "WS") ? 401 : 421;
+        socket.end(`HTTP/1.1 ${status} Rejected\r\nConnection: close\r\n\r\n`);
       });
       return server;
     }
@@ -404,6 +412,12 @@ export async function tlsUpstreamIdentity() {
         sni: "localhost",
       },
       { scope: "ipv4", upstream: v4Origin + "/", sni: "" },
+      {
+        scope: "external",
+        upstream: v4Origin.replace("127.0.0.1", "localhost") + "/",
+        sni: "localhost",
+        forwardAuthority: "upstream",
+      },
     ];
     v6 = ownedTLS();
     try {
@@ -488,6 +502,7 @@ export async function tlsUpstreamIdentity() {
           prefix: `/lightnvr/${t.scope}/`,
           cookieName: `lnvr_${t.scope}`,
           upstream: t.upstream,
+          forwardAuthority: t.forwardAuthority,
         })),
       }),
     );
@@ -529,10 +544,14 @@ export async function tlsUpstreamIdentity() {
       "x-forwarded-proto": "https",
     };
     for (const target of targets) {
+      const external = target.forwardAuthority === "upstream";
+      const upstream = new URL(target.upstream);
+      const expectedAuthority = external ? upstream : new URL(headers.origin);
+      const query = external ? "x=%2f&external=1" : "x=%2f";
       assert.equal(
         await send(
           origin,
-          `/lightnvr/${target.scope}/api/%76erify?x=%2f`,
+          `/lightnvr/${target.scope}/api/%76erify?${query}`,
           headers,
         ),
         200,
@@ -540,12 +559,15 @@ export async function tlsUpstreamIdentity() {
       );
       assert.deepEqual(seen.at(-1), {
         method: "HTTP",
-        host: "ha.example.test",
+        host: expectedAuthority.host,
+        origin: expectedAuthority.origin,
+        forwardedHost: expectedAuthority.host,
+        forwardedProto: "https",
         sni: target.sni,
-        path: "/api/%76erify?x=%2f",
+        path: `/api/%76erify?${query}`,
       });
       assert.equal(
-        await send(origin, `/lightnvr/${target.scope}/go2rtc/api/ws?x=%2f`, {
+        await send(origin, `/lightnvr/${target.scope}/go2rtc/api/ws?${query}`, {
           ...headers,
           Connection: "Upgrade",
           Upgrade: "websocket",
@@ -557,18 +579,52 @@ export async function tlsUpstreamIdentity() {
       );
       assert.deepEqual(seen.at(-1), {
         method: "WS",
-        host: "ha.example.test",
+        host: expectedAuthority.host,
+        origin: expectedAuthority.origin,
+        forwardedHost: expectedAuthority.host,
+        forwardedProto: "https",
         sni: target.sni,
-        path: "/go2rtc/api/ws?x=%2f",
+        path: `/go2rtc/api/ws?${query}`,
       });
     }
     assert.equal(seen.length, targets.length * 2);
+    const beforeDenials = seen.length;
+    for (const badOrigin of [
+      "https://hostile.example.test",
+      "null",
+      targets[2].upstream.slice(0, -1),
+    ]) {
+      for (const path of ["api/verify", "go2rtc/api/ws"]) {
+        assert.equal(
+          await send(origin, `/lightnvr/external/${path}`, {
+            ...headers,
+            origin: badOrigin,
+            ...(path.endsWith("ws")
+              ? {
+                  Connection: "Upgrade",
+                  Upgrade: "websocket",
+                  "Sec-WebSocket-Version": "13",
+                  "Sec-WebSocket-Key": randomBytes(16).toString("base64"),
+                }
+              : {}),
+          }),
+          403,
+        );
+      }
+    }
+    assert.equal(
+      seen.length,
+      beforeDenials,
+      "hostile Origins must never be translated upstream",
+    );
     console.log(
       JSON.stringify({
         upstreamTLS: "passed",
         authorities: targets.map((t) => t.scope),
         requests: seen.length,
         publicHostPreserved: true,
+        externalAuthorityTranslated: true,
+        hostileOriginsRejectedBeforeForwarding: true,
         untrustedIssuerRejected: true,
         dnsSNI: "localhost",
         ipSNI: "absent",

@@ -5,6 +5,6 @@
   "origins": ["https://ha.example.test"],
   "scopes": [
     {"prefix": "/lightnvr/front/", "cookieName": "lnvr_front_session", "upstream": "http://nvr-front:8080/"},
-    {"prefix": "/lightnvr/back/", "cookieName": "lnvr_back_session", "upstream": "http://nvr-back:8080/"}
+    {"prefix": "/lightnvr/back/", "cookieName": "lnvr_back_session", "upstream": "https://nvr.example.test/", "forwardAuthority": "upstream"}
   ]
 }

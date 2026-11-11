@@ -1,17 +1,57 @@
-# Browser connectivity and the same-origin recipe
+# Connecting local or external lightNVR servers
+
+**lightNVR does not need to run on the Home Assistant host, or as an Add-on/App.** It may run on another LAN machine, across a VPN, or behind its own publicly reachable HTTPS reverse proxy. The routing helper must be able to reach that server. The dedicated container network below connects the HA-facing edge to the helper; it does not require HA or lightNVR to run in those containers or on that host.
+
+“Same origin” describes the URL seen by the browser, not the physical location of either server. For the tested lightNVR release, full authenticated playback uses an HA-origin path that forwards to lightNVR over the network. Pointing the browser directly at an unrelated NVR hostname still has the limitations in [Direct mode](#direct-mode-observed-boundaries).
 
 The supported reference topology routes an NVR prefix through **the reverse proxy that serves the Home Assistant dashboard origin**:
 
 ```text
 Browser: https://ha.example.test/
     ├── HA routes ──────────────── existing HA service
-    └── /lightnvr/front/ ─ Traefik ─ scoped routing helper ─ lightNVR HTTP
-                                                               └── managed go2rtc
+    └── /lightnvr/front/ ─ Traefik ─ scoped routing helper
+                                       │ HTTP(S) over LAN / VPN / Internet
+                                       └── lightNVR on another host
+                                               └── managed go2rtc
 ```
 
 `ha.example.test` and the NVR service names in these examples are placeholders. Configure the card's `server` as `https://ha.example.test/lightnvr/front/`, with the trailing slash. Login still uses the individual lightNVR user's credentials and existing lightNVR grants. No administrator credential is configured in the helper. No additional go2rtc is installed, and its raw HTTP API/port must remain private.
 
-**Deployment prerequisite:** every dashboard origin used by the browser must route these prefixes to the helper. A TLS sidecar attached only to the NVR cannot create routes on an existing HA origin. If you cannot change the HA-serving edge, this full-support topology is unavailable. Adding CORS, rewriting a hostile Origin, or publishing go2rtc cannot repair that prerequisite.
+**Deployment prerequisite:** every dashboard origin used by the browser must route these prefixes to the helper. A TLS sidecar attached only to the NVR cannot create routes on an existing HA origin. If you cannot change the HA-serving edge, this full-support topology is unavailable. Adding CORS or publishing go2rtc cannot repair that prerequisite. The helper rejects hostile browser Origins before any configured upstream authority translation.
+
+## Example: external lightNVR behind its own TLS proxy
+
+Suppose HA is served at `https://ha.example.test/` and the existing lightNVR web interface is at `https://nvr.example.test/` on a different machine. In the helper's private configuration, use:
+
+```json
+{
+  "bind": "0.0.0.0",
+  "port": 8080,
+  "trustedPeers": ["172.31.253.2"],
+  "origins": ["https://ha.example.test"],
+  "scopes": [{
+    "prefix": "/lightnvr/front/",
+    "cookieName": "lnvr_front_session",
+    "upstream": "https://nvr.example.test/",
+    "forwardAuthority": "upstream"
+  }]
+}
+```
+
+Use the actual HA edge's peer address in `trustedPeers` (the address above belongs to the example network). Route `/lightnvr/front/` on the HA edge to the helper as described below. The helper resolves and connects to `nvr.example.test:443`; its TLS certificate and SNI use that NVR hostname. With `forwardAuthority: "upstream"`, the outbound Host, Origin (when supplied), and forwarding headers also use the configured NVR authority. This allows its existing hostname-based Traefik or other TLS ingress to route normally. The helper first validates the original browser Host/Origin and trusted edge; this setting does not accept cross-origin browser traffic or disable lightNVR authentication.
+
+The card still uses the HA-origin path, with the lightNVR username/password entered through Connect/discovery:
+
+```yaml
+type: custom:lightnvr-camera-card
+server: /lightnvr/front/
+stream: front_door_sub
+credential_storage: session
+```
+
+The upstream root must expose lightNVR's authenticated `/api/`, `/go2rtc/` gateway and `/hls/` routes. An external sidecar that publishes only raw go2rtc is insufficient. Do not put credentials in the upstream URL. A remote ingress with an additional interactive login or MFA layer is not handled by this recipe. Use verified HTTPS over the Internet; protected HTTP LAN/VPN backends can also be configured. WebRTC media still needs reachable ICE candidates or TURN across the two networks; the HTTPS helper forwards signaling, MSE and HLS, not WebRTC UDP. HA itself must be opened through trusted HTTPS for microphone/PTT.
+
+Multiple cameras on that server can use the same prefix in separate cards or a native grid. To connect another NVR or keep sessions separate, add a distinct nonoverlapping prefix and cookie name.
 
 ## Files and integration
 
@@ -21,7 +61,9 @@ Browser: https://ha.example.test/
 - [traefik.static.example.yaml](../examples/proxy/traefik.static.example.yaml) shows the corresponding HTTPS entrypoint and forwarded-header policy. Preserve the existing edge's other entrypoints, HA services and certificate resolver.
 - [router.mjs](../examples/proxy/router.mjs) implements the required cookie/Location/playlist transformations. Traefik StripPrefix alone does not perform those response transformations; do not attach StripPrefix in front of this helper.
 
-Prepare a private copy of the JSON configuration outside this repository. Replace the origin and upstream placeholders with addresses the helper can actually resolve and reach. Upstreams must be **lightNVR's HTTP service root**, such as its port 8080, never managed go2rtc's port 1984. Both `http:` on a protected private network and verified `https:` are accepted. Node verifies upstream HTTPS certificates by default; mount a private CA and set `NODE_EXTRA_CA_CERTS` if needed. Do not disable certificate verification. Upstream HTTPS with a private CA is not part of the real-server runtime receipt below; the tested upstream hop is isolated HTTP.
+Prepare a private copy of the JSON configuration outside this repository. Replace the origin and upstream placeholders with addresses the helper can actually resolve and reach. Upstreams must be **lightNVR's HTTP(S) service root**, such as its port 8080 or an HTTPS reverse proxy for that root, never managed go2rtc's port 1984. Both `http:` on a protected private network and verified `https:` are accepted. Node verifies upstream HTTPS certificates by default; mount a private CA and set `NODE_EXTRA_CA_CERTS` if needed. Do not disable certificate verification. The real lightNVR fixture uses an isolated HTTP upstream; separate owned TLS tests verify DNS/IP certificates and external authority translation. These are not evidence of deployment against an Internet-hosted production NVR.
+
+Each scope accepts `forwardAuthority: "public"` (the default) or `"upstream"`. The default preserves HA's public authority for a direct NVR backend. Choose `"upstream"` when targeting an external hostname-routed ingress. Both modes retain all inbound edge/Host/Origin validation, per-user authentication, scoped cookies and route restrictions. Unknown values fail configuration validation.
 
 The sample helper network is an external network named `lightnvr-edge`. The example reserves `172.31.253.2` for the HA-facing Traefik edge and `.3` for the helper. Choose an unused subnet and adjust the Compose IP and JSON `trustedPeers` together. Attach only this edge and helper to that dedicated network. Allow the helper to reach the existing NVR addresses; if the NVR is reachable only on another container network, attach the helper to that backend network as well. Do not publish helper or go2rtc ports. The tests use loopback peers with Linux host networking instead of this illustrative deployment subnet.
 
@@ -38,8 +80,8 @@ Starting/reconfiguring a real edge is a separate operator deployment step. These
 
 | Concern | Behavior |
 | --- | --- |
-| Public Host and Origin | Require an exact configured Host and HTTPS origin. Preserve browser Origin unchanged to lightNVR. Reject hostile/null Origin and cross-site fetch metadata. A browser WS upgrade requires an Origin. Origin-less HTTP tools still require the trusted peer, allowed Host, and lightNVR authentication. |
-| TLS forwarding | Accept forwarded headers only from an explicit socket-peer allowlist. Require `X-Forwarded-Host` to match Host and `X-Forwarded-Proto: https`; on WS upgrades only, Traefik 3.7.17's `wss` is also accepted. Recreate trusted HTTPS forwarding upstream, remove client forwarding/identity hints. Keep Traefik `forwardedHeaders.insecure: false`; do not trust arbitrary clients or a whole LAN. |
+| Public Host and Origin | Require an exact configured Host and HTTPS origin. Reject hostile/null Origin and cross-site fetch metadata before forwarding. A browser WS upgrade requires an Origin. Default `forwardAuthority: "public"` preserves the browser authority upstream; explicit `"upstream"` translates it to the fixed configured NVR authority after validation. Origin-less HTTP tools still require the trusted peer, allowed Host, and lightNVR authentication; no Origin is fabricated. |
+| TLS forwarding | Accept forwarded headers only from an explicit socket-peer allowlist. Require `X-Forwarded-Host` to match Host and `X-Forwarded-Proto: https`; on WS upgrades only, Traefik 3.7.17's `wss` is also accepted. Recreate forwarding headers from the selected authority (`public` HTTPS or configured `upstream` HTTP/HTTPS); remove client forwarding/identity hints. Keep Traefik `forwardedHeaders.insecure: false`; do not trust arbitrary clients or a whole LAN. |
 | Cookie isolation | Rename upstream `session` to a unique `lnvr_*` name per prefix, strip Domain, set the exact trailing-slash Path, enforce Secure/HttpOnly and at least SameSite=Lax (preserve Strict). Preserve expiry and deletion attributes. Forward only the selected cookie as upstream `session`; discard HA, sibling-prefix, and root `session` cookies. Reject duplicate selected cookies/header ambiguity. The browser sends no NVR cookies to HA routes. |
 | Identities | Two prefixes have separate login sessions even when both target one NVR. A user's HLS lease cannot be used with the sibling prefix's session. Cookie paths isolate request selection; the shared browser origin is still one trust boundary, and dashboard configuration is not a credential vault. |
 | MFA / remembered devices | Only `session` is supported and forwarded. `trusted_device` and other cookies are discarded; remembered-device MFA is intentionally unavailable. Interactive authentication policy remains upstream's responsibility. TOTP/password-change flows are not established by this proxy receipt. |

@@ -184,7 +184,8 @@ export function createRouter(config) {
       url.password ||
       url.pathname !== "/" ||
       url.search ||
-      url.hash
+      url.hash ||
+      ![undefined, "public", "upstream"].includes(scope.forwardAuthority)
     )
       throw Error("Invalid scope");
   }
@@ -259,11 +260,19 @@ export function createRouter(config) {
     if (selected.length)
       headers.cookie =
         "session=" + selected[0].slice(scope.cookieName.length + 1);
-    headers.host = publicUrl.host;
-    headers["x-forwarded-host"] = publicUrl.host;
-    headers["x-forwarded-proto"] = "https";
+    // Only translate authority AFTER validating the edge peer, public Host/Origin,
+    // scope and path. This lets a remote hostname-routed ingress receive its own
+    // authority without turning arbitrary browser Origins into trusted requests.
+    const authority =
+      scope.forwardAuthority === "upstream"
+        ? new URL(scope.upstream)
+        : publicUrl;
+    headers.host = authority.host;
+    headers["x-forwarded-host"] = authority.host;
+    headers["x-forwarded-proto"] = authority.protocol.slice(0, -1);
+    if (req.headers.origin) headers.origin = authority.origin;
     headers["accept-encoding"] = "identity";
-    // Keep public Origin unchanged. lightNVR remains the authentication/authorization authority.
+    // lightNVR remains the authentication/authorization authority in both modes.
     if (upgrade) {
       headers.connection = "Upgrade";
       headers.upgrade = "websocket";

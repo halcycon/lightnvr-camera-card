@@ -8,6 +8,8 @@ CodeQL reported request-forgery findings in the deployment router and isolated p
 
 The proxy-test utility now uses the generated certificate as its CA for every HTTPS request, including readiness and rejection checks. A separate successful certificate probe did not justify disabling verification elsewhere. The real 19-check protocol probe and five-test proxy run passed. The coordinator independently passed the three new authority/IPv6/TLS regressions; the trap saw zero HTTP/WS requests and zero TCP connections. The exact follow-up results are recorded in [verification](verification.md).
 
+External NVR ingress support adds explicit per-scope `forwardAuthority: "upstream"`. It translates outbound Host, supplied Origin and forwarded authority to the configured upstream only after validating the socket peer, exact public Host/Origin, forwarding headers, route and scoped cookie. It never translates a hostile or null browser Origin into an accepted request. The default retains the public authority. Destination URL/certificate identity remains fixed by configuration, and authentication remains lightNVR's responsibility; the helper injects no account credentials. Owned TLS tests model an external hostname-routed ingress and verify HTTP/WS authority translation, preserved upstream 401 denial, certificate/SNI identity and rejection of hostile Origins before forwarding. They do not establish production Internet/NAT compatibility.
+
 ## Three bundled-library findings
 
 Existing card tests also verify that a server detection label containing `<script>` renders as text with no script element.

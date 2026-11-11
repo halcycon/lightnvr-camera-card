@@ -1,5 +1,7 @@
 # Helper for an EXISTING HA-facing Traefik edge. See docs/connectivity.md.
 # Create/choose a dedicated external network and give that edge the trusted .2 address.
+# lightNVR may be on another host or reached at its public HTTPS hostname.
+# The helper needs outbound connectivity to each configured upstream.
 name: lightnvr-routing
 services:
   router:

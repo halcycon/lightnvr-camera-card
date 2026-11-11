@@ -50,6 +50,8 @@ The frozen inventory wire schema selects name/camera_uuid, enabled/status/privac
 
 ## Feasible full-support prefix design for T3
 
+This section records the original loopback protocol proof, not a deployment requirement that lightNVR share a host with HA. The current [production connectivity recipe](connectivity.md) supports remote HTTP(S) servers and explicit upstream authority translation after strict inbound Origin validation. The unchanged-Origin behavior below describes the proof helper and the production helper's default mode.
+
 The tested routing helper is `tests/probes/proxy.mjs`, a proof implementation for packaging into a hardened recipe in T3. It forwards to lightNVR HTTP, never directly to its managed go2rtc port. It demonstrates:
 
 1. Route only a selected NVR prefix; strip it on upstream requests. Preserve the browser-facing Host, leave Origin unchanged, and reject an Origin that does not exactly match the allowed public origin before forwarding. T3 adds trusted HTTPS/WSS forwarding and a configured public Host allowlist; do not trust arbitrary forwarded headers.
