@@ -54,3 +54,7 @@ Tailor's post-adoption `measure` reports two deliberate mode differences: the PR
 A subsequent `baste` proposes no local file changes. It can still reapply the Dependency Graph enable request and report GitHub's non-provider secret-pattern setting; those remote settings are verified by GitHub/Tailor, not inferred from a local template. GitHub Code Quality is unavailable for this repository and remains skipped. CodeQL, vulnerability alerts and provider-pattern secret scanning remain enabled. Tailor requests non-provider patterns too, but GitHub continues to report that optional setting disabled; no successful enablement is claimed for it.
 
 Before future template updates, run `tailor baste` and inspect the complete preview. Use `tailor alter` to apply reviewed changes; keep project logic in the hooks. Tailor's first-fit rules preserve the root project configuration and existing `.gitignore`; the additional Nix/direnv output rules preserve the original private-data exclusions. Do not publish `.execution/`, generated credentials or browser state.
+
+## Verified adoption
+
+Local native lint, all 511 tests, build/release checks and the current-HA 13-check acceptance matrix passed. Hosted [Card CI 42941363640](https://github.com/halcycon/lightnvr-camera-card/actions/runs/42941363640) passed both the regular Node workflow and the locked Nix-shell workflow, including its explicit Tailor 0.6.0 assertion and health check. HACS metadata validation passed. The published module matches the real-HA-tested build byte-for-byte.

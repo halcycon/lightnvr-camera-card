@@ -305,8 +305,10 @@ T1–T10 implementation and local integration verification are complete within t
 ### T11: Tailor repository layout follow-up
 
 - **depends_on**: [T10]
-- **status**: In progress — actual Tailor application and local verification complete; hosted Nix/CI checks pending.
+- **status**: Verified — Tailor 0.6.0 application, native workflows and hosted Nix/CI checks passed.
 - **description**: Audit the actual project against wimpysworld/tailor and use its CLI to complete the intended layout/tooling, reconciling earlier Tailor records. Preserve implemented behavior, licensing, security and private-file exclusions. Scaffold configuration alone is not completion.
 - **validation**: Exact Tailor version/preview/application results and layout diffs; affected project and hosted checks. No worktree reset or release/catalog publication.
 
-T11 local evidence: checksum-verified Tailor 0.6.0 measure/baste/alter; native project hooks, Oxlint/Prettier policies, PR template and locked Nix inputs adopted. Native lint, 511 unit tests, build/release checks and the fresh current-HA 13-check matrix pass. Local file preview has converged; two intentional mode overrides and GitHub capability/reapply notices are documented.
+T11 verified evidence: checksum-verified Tailor 0.6.0 measure/baste/alter; native project hooks, Oxlint/Prettier policies, PR template and locked Nix inputs adopted. Native lint, 511 unit tests, build/release checks and the fresh current-HA 13-check matrix pass. Local file preview has converged; two intentional mode overrides and GitHub capability/reapply notices are documented.
+
+Hosted T11 verification: Card CI run 42941363640 passed regular Node build, HACS and the Nix-shell job (Tailor 0.6.0 asserted; health check, lint, 511 tests and build executed inside the shell). CodeQL results and the published module are checked independently. See docs/development.md and docs/verification.md.
