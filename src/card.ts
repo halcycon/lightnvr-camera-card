@@ -445,6 +445,18 @@ export class LightNvrCameraCard extends LitElement {
     const video = this.renderRoot.querySelector("video");
     if (video && this.session) video.volume = this.config?.audio.volume ?? 1;
   }
+  private async openDiagnostics(): Promise<void> {
+    this.cancelInteractions();
+    this.advancedOpen = true;
+    this.requestUpdate();
+    await this.updateComplete;
+    const details =
+      this.renderRoot.querySelector<HTMLDetailsElement>(".diagnostics");
+    if (details) {
+      details.open = true;
+      details.scrollIntoView?.({ block: "nearest" });
+    }
+  }
   protected render() {
     const config = this.config;
     if (!config) return nothing;
@@ -497,9 +509,9 @@ export class LightNvrCameraCard extends LitElement {
     const overlay = config.controls.style === "overlay";
     const toolbar = html`<div class=${overlay ? "toolbar overlay-toolbar" : "row toolbar"} role="group" aria-label="Camera controls">
       ${overlay ? html`<span class=${snapshot?.talk.active ? "toolbar-state talking" : snapshot?.talk.pending ? "toolbar-state pending" : "toolbar-state"} role="status">${snapshot?.talk.active ? "MIC LIVE" : snapshot?.talk.pending ? "MIC…" : (this.show("transport") ? (snapshot?.transport ?? snapshot?.state ?? "Connecting") : (snapshot?.state ?? "Connecting")).toUpperCase()}</span>` : nothing}
-      <button aria-label="Play / retry locally" title="Play / retry locally" @click=${() => {
+      <button aria-label="Play / retry locally" title="Play / retry locally" ?disabled=${session?.authBusy} @click=${() => {
         this.cancelInteractions();
-        void session?.playback.retry();
+        void session?.retry();
       }}>${overlay ? toolbarIcon("retry") : "Play / retry locally"}</button>
       ${overlay && this.show("snapshot") ? this.button("Snapshot", "snapshot", () => void this.snapshot(), "snapshot") : nothing}
       ${this.show("speaker") ? html`<button aria-label=${session?.listening ? "Mute speaker" : "Listen"} aria-pressed=${String(session?.listening ?? false)} ?disabled=${!speaker.enabled || session?.denied.has("audio.listen")} title=${`${session?.listening ? "Mute speaker" : "Listen"} · ${speaker.reason}`} @click=${() => void session?.speaker()}>${overlay ? toolbarIcon(session?.listening ? "speaker" : "muted") : session?.listening ? "Mute speaker" : "Listen"}</button>` : nothing}
@@ -526,9 +538,10 @@ export class LightNvrCameraCard extends LitElement {
         ${overlay ? toolbar : nothing}
       </div>
       <div class="body">
-        <div class=${overlay && snapshot?.state === "playing" && !snapshot.failure ? "status sr-only" : "status"} role="status">${snapshot?.state ?? "Connecting"}${this.show("transport") && snapshot?.transport ? ` · ${snapshot.transport.toUpperCase()}` : ""}${snapshot?.failure ? ` · ${snapshot.failure.message}` : ""}</div>
+        <div class=${overlay && snapshot?.state === "playing" && !snapshot.failure ? "status sr-only" : "status"} role="status">${snapshot?.state === "idle" && session?.authBusy ? "connecting" : snapshot?.state === "idle" && session?.auth ? "sign-in required" : snapshot?.state === "idle" && session?.message ? "connection failed" : (snapshot?.state ?? "Connecting")}${this.show("transport") && snapshot?.transport ? ` · ${snapshot.transport.toUpperCase()}` : ""}${snapshot?.failure ? ` · ${snapshot.failure.message}` : ""}</div>
         ${this.show("transport") && snapshot?.state === "playing" && session?.fallbackReason ? html`<div class="hint">Previous playback issue: ${session.fallbackReason}</div>` : nothing}
         ${session?.message || this.notice ? html`<p class="message" role="status">${session?.message} ${this.notice}</p>` : nothing}
+        ${session?.message || snapshot?.failure || session?.fallbackReason ? html`<button @click=${() => void this.openDiagnostics()}>Show connection diagnostics</button>` : nothing}
         ${snapshot?.talk.failure ? html`<p role="alert">Microphone: ${snapshot.talk.failure.message}</p>` : nothing}
         ${session?.auth ? this.authForm(session) : nothing}
         ${overlay ? nothing : toolbar}
@@ -661,6 +674,17 @@ export class LightNvrCameraCard extends LitElement {
           ${this.show("privacy") ? this.button("Toggle camera privacy", "privacy", () => void session?.mutate({ action: "privacy", enabled: true })) : nothing}
           ${this.show("detection") ? this.button(session?.detectionEnabled ? "Hide detections" : "Show detections", "detection", () => session?.toggleDetections()) : nothing}
           ${this.show("refresh_source") ? this.button("Refresh source (all viewers)", "refresh", () => void session?.mutate({ action: "refresh" })) : nothing}
+        <details class="diagnostics"><summary>Connection diagnostics</summary><p class="hint">Contains fixed operation/error labels and timestamps. No passwords, server URLs, camera URLs or SDP.</p><pre>${JSON.stringify(session?.diagnostics() ?? {}, null, 2)}</pre><button @click=${async () => {
+          try {
+            await navigator.clipboard.writeText(
+              JSON.stringify(session?.diagnostics() ?? {}, null, 2),
+            );
+            this.notice = "Diagnostics copied.";
+          } catch {
+            this.notice = "Copy unavailable. Select the diagnostic text above.";
+          }
+          this.requestUpdate();
+        }}>Copy diagnostics</button></details>
         </div>
         ${
           this.show("timeline")

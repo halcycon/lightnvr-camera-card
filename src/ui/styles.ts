@@ -24,6 +24,8 @@ export const viewerStyles = css`
   a { color:var(--primary-color,#0277bd); display:inline-block; padding:10px 0; }
   .ptz { display:grid; grid-template-columns:repeat(3,minmax(44px,1fr)); gap:4px; max-width:230px; margin:8px 0; }
   .message { overflow-wrap:anywhere; margin:6px 0; } form { display:flex; flex-wrap:wrap; gap:8px; }
+  .diagnostics pre { max-height:280px; overflow:auto; font-size:12px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .diagnostics { flex-basis:100%; min-width:0; }
   [hidden] { display:none !important; }
   .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
   .overlay-toolbar { position:absolute; z-index:2; bottom:10px; left:10px; right:10px; display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:2px; padding:4px 6px; color:var(--lightnvr-toolbar-color,#fff); background:var(--lightnvr-toolbar-background,rgba(16,19,23,.8)); border:1px solid rgba(255,255,255,.14); border-radius:var(--lightnvr-toolbar-radius,12px); box-shadow:0 2px 12px rgba(0,0,0,.24); backdrop-filter:blur(10px); }

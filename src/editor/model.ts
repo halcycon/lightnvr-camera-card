@@ -22,8 +22,9 @@ const help: Record<string, string> = {
   auth: "Check username/password, then test again. Inline MFA requires the lightNVR UI.",
   policy:
     "Ask for the required viewer grant in lightNVR; access cannot be bypassed.",
-  proxy: "Check the same-origin proxy routing and cookie scope.",
-  network: "Check the same-origin proxy, HTTPS and browser access to lightNVR.",
+  proxy: "Check the selected NVR gateway routing and cookie scope.",
+  network:
+    "The browser request or client operation failed; this alone does not prove the NVR is offline. Review the operation/stage below.",
   "unsupported-api":
     "Check the lightNVR version and that the prefix serves API JSON rather than HTML.",
   "rate-limit": "Wait for the server retry interval before testing again.",
@@ -142,7 +143,7 @@ export class EditorModel {
   }
   private failure(e: unknown): void {
     const diagnostic = safeDiagnostic(e);
-    this.error = `${diagnostic.message} ${help[diagnostic.code] ?? "Review lightNVR state and the selected source."}${diagnostic.retryAfterMs ? ` Retry after ${Math.ceil(diagnostic.retryAfterMs / 1000)} seconds.` : ""}`;
+    this.error = `${diagnostic.message} ${help[diagnostic.code] ?? "Review lightNVR state and the selected source."} ${[diagnostic.operation, diagnostic.phase, diagnostic.status ? `HTTP ${diagnostic.status}` : undefined, diagnostic.browserError].filter(Boolean).join(" · ")}${diagnostic.retryAfterMs ? ` Retry after ${Math.ceil(diagnostic.retryAfterMs / 1000)} seconds.` : ""}`;
   }
   async testConnection(): Promise<void> {
     this.tested = false;

@@ -21,6 +21,19 @@ afterEach(async () => {
 });
 
 describe("transport decisions and bounded recovery", () => {
+  it("does not skip a renderer when session setup fails before that renderer starts", async () => {
+    const h = harness();
+    await h.start();
+    h.api.client.connect.mockRejectedValueOnce(
+      new NvrError({ code: "network", message: "ignored" }),
+    );
+    h.last().fail("network");
+    await flush();
+    expect(h.adapters.map((a) => a.kind)).toEqual(["webrtc"]);
+    await vi.advanceTimersByTimeAsync(100);
+    await flush();
+    expect(h.adapters.map((a) => a.kind)).toEqual(["webrtc", "webrtc"]);
+  });
   it("preserves a healthy player and auth reference across HA layout-only config updates", async () => {
     const h = harness();
     await h.start();

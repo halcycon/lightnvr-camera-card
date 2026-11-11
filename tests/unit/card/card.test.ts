@@ -4,7 +4,7 @@ import { LightNvrCameraCard } from "../../../src/card";
 import "../../../src/index";
 import { ViewerSession } from "../../../src/ui/session";
 import { camera, config, deferred, fixture, flush } from "./fixture";
-import { type NvrClient } from "../../../src/contracts";
+import { NvrError, type NvrClient } from "../../../src/contracts";
 Object.defineProperty(document, "fullscreenElement", {
   configurable: true,
   get: () => null,
@@ -55,6 +55,83 @@ const pointer = (target: EventTarget, type: string, pointerId = 1) =>
   );
 
 describe("Home Assistant card lifecycle", () => {
+  it("retries initial connection setup when the retry button is pressed after a failure", async () => {
+    const f = fixture();
+    vi.mocked(f.client.connect).mockRejectedValueOnce(
+      new TypeError("private URL and password must never appear"),
+    );
+    const { card } = await mount({}, f);
+    expect(f.playback.start).not.toHaveBeenCalled();
+    expect(card.shadowRoot!.querySelector(".status")!.textContent).toContain(
+      "connection failed",
+    );
+    expect(card.shadowRoot!.textContent).not.toContain("private URL");
+    button(card, "Show connection diagnostics").click();
+    await flush();
+    await card.updateComplete;
+    expect(
+      card.shadowRoot!.querySelector<HTMLDetailsElement>(".diagnostics")!.open,
+    ).toBe(true);
+    button(card, "Play / retry locally").click();
+    await flush();
+    await card.updateComplete;
+    expect(f.client.connect).toHaveBeenCalledTimes(2);
+    expect(f.playback.start).toHaveBeenCalledOnce();
+    expect(f.playback.retry).not.toHaveBeenCalled();
+    const diagnostic =
+      card.shadowRoot!.querySelector(".diagnostics pre")!.textContent!;
+    expect(diagnostic).toContain("session-connect");
+    expect(diagnostic).toContain("TypeError");
+    expect(diagnostic).not.toContain("password");
+  });
+  it("automatically retries a labelled safe bootstrap read and retains its diagnostic", async () => {
+    vi.useFakeTimers();
+    try {
+      const f = fixture();
+      vi.mocked(f.client.connect).mockRejectedValueOnce(
+        new NvrError({
+          code: "network",
+          message: "ignored",
+          phase: "api-request",
+          operation: "auth.verify",
+          browserError: "TypeError",
+        }),
+      );
+      const { card } = await mount(
+        { retry: { base_ms: 2000, cap_ms: 30000, attempts: 5, jitter: 0 } },
+        f,
+      );
+      expect(f.playback.start).not.toHaveBeenCalled();
+      expect(card.shadowRoot!.textContent).toContain("Retrying connection");
+      await vi.advanceTimersByTimeAsync(2000);
+      await flush();
+      await card.updateComplete;
+      expect(f.playback.start).toHaveBeenCalledOnce();
+      expect(
+        card.shadowRoot!.querySelector(".diagnostics pre")!.textContent,
+      ).toContain("auth.verify");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it.each(["auth.login", "auth.totp"] as const)(
+    "does not automatically replay a failed %s write",
+    async (operation) => {
+      const f = fixture();
+      vi.mocked(f.client.connect).mockRejectedValue(
+        new NvrError({
+          code: "network",
+          message: "ignored",
+          phase: "api-request",
+          operation,
+        }),
+      );
+      const { card } = await mount({}, f);
+      expect(f.client.connect).toHaveBeenCalledOnce();
+      expect(f.playback.start).not.toHaveBeenCalled();
+      expect(card.shadowRoot!.textContent).not.toContain("Retrying connection");
+    },
+  );
   it("offers an accessible overlay without restarting playback when settings expand", async () => {
     const { card, playback } = await mount({ controls: { style: "overlay" } });
     const root = card.shadowRoot!;

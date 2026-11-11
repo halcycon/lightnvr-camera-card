@@ -2,6 +2,12 @@
 
 Start with the [version/evidence matrix](../README.md#verified-scope) and [connectivity recipe](connectivity.md). Never paste raw request headers, cookies, credentials, SDP, source URLs or private hostnames into a public issue. Include sanitized card config, exact versions, transport/provider, fixed diagnostic code/status, whether the HA origin is internal/external, and whether the media was generated or a physical test camera. Review even redacted diagnostics before sharing.
 
+For a failed or recovered connection, use **Show connection diagnostics → Copy diagnostics**. It retains up to ten distinct failure summaries with UTC timestamps, request operation, stage, HTTP status when available and an allowlisted browser error name. The report omits credentials, URLs, camera identifiers, SDP and raw exception text. In the overlay it is also available under Camera settings. A `TypeError` without an HTTP status means JavaScript did not receive a readable response; it cannot distinguish DNS, TLS, CORS or a dropped connection by itself. `browserOnlineHint` is only the browser's hint, not an NVR reachability check.
+
+An `idle`/connection-failed card without a discovered camera failed before media negotiation. Diagnose `auth.verify`, `auth.login`, `streams.summary` or `client.config` first, rather than changing ICE/TURN. Transient failures of initial safe reads now use bounded configured retries; a failed login/TOTP POST is not automatically replayed, and 401/403 are not retried as network errors. **Play / retry locally** restarts initialization when playback has not started. A session-setup failure does not skip an untried renderer.
+
+`auth: session` selects cookie authentication. `credential_storage: dashboard` saves login details in the dashboard; `credential_storage: session` omits them from saved YAML. A valid gateway cookie is reused after reload in either case. When it is missing or expired, the session-only viewer asks for login. Switching storage is not a different network endpoint or authentication protocol. Ordinary NVR web-UI login uses a separate cookie from the scoped card gateway.
+
 | Symptom | Check / action |
 | --- | --- |
 | Custom element does not exist | Check exactly one module resource, the exact `lightnvr-camera-card.js` filename and successful JavaScript response. Reload frontend; for manual upgrades change the cache query. Restart HA after first creating `www`. Remove duplicate manual/HACS/Marketplace registrations. |

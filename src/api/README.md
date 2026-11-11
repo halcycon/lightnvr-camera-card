@@ -73,8 +73,11 @@ foreign routes and go2rtc administration/discovery routes are rejected. Response
 must be consumed or cancelled by the caller. Media errors can be non-JSON. Only
 4 KiB of a go2rtc server-error body is inspected internally for known connectivity
 failures; resulting source-offline messages are fixed, and no raw text is logged.
-`safeDiagnostic` returns an allowlist of fixed message, code, status and retry
-delay. Never serialize a client, credentials, ICE credentials or raw wire data.
+`safeDiagnostic` returns fixed message/code, status/retry delay and explicitly
+allowlisted request-operation, stage and browser exception-name labels. It never
+returns exception text, stack, URLs, cookies or SDP. JSON API requests explicitly
+send `Accept: application/json` so authentication failures remain API responses.
+Never serialize a client, credentials, ICE credentials or raw wire data.
 
 Controls use canonical camera names and the verified lightNVR routes. PTZ axes
 x/y/z map to pan/tilt/zoom. The frozen optional PTZ speed has no upstream wire

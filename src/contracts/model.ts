@@ -79,6 +79,37 @@ export interface PlaybackFailure {
   message: string;
   status?: number;
   retryAfterMs?: number;
+  phase?:
+    | "api-request"
+    | "response-body"
+    | "http-response"
+    | "json-response"
+    | "session-connect"
+    | "camera-discovery"
+    | "client-config"
+    | "source-selection"
+    | "playback-start";
+  operation?:
+    | "auth.verify"
+    | "auth.login"
+    | "auth.totp"
+    | "streams.summary"
+    | "client.config"
+    | "ice.servers"
+    | "webrtc.offer"
+    | "hls.media"
+    | "snapshot"
+    | "camera.control"
+    | "api.other";
+  browserError?:
+    | "TypeError"
+    | "AbortError"
+    | "NetworkError"
+    | "SecurityError"
+    | "NotAllowedError"
+    | "NotSupportedError"
+    | "InvalidStateError"
+    | "SyntaxError";
 }
 /** Safe fixed messages only; raw upstream text, SDP and URLs must never be copied. */
 export class NvrError extends Error {

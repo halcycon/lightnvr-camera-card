@@ -6,6 +6,7 @@ import {
 } from "../../contracts";
 import { registerSender, senderIsValid } from "../../audio/sender-lease";
 import { abortable, cancellation, gatherIce } from "./ice";
+import { safeDiagnostic } from "../../api/safety";
 
 export interface WebRtcStats {
   framesDecoded: number;
@@ -286,6 +287,7 @@ export function createWebRtcAdapter(
     }
     // Only origins are intentionally shown for TLS diagnosis: never source, query, credentials or upstream text.
     return {
+      ...safeDiagnostic(cause),
       code: "network",
       message: `WebRTC SDP signaling failed. HA document origin: ${origin}; NVR signaling origin: ${s.context.client.profile.origin}. Check TLS trust, mixed content, proxy and browser connectivity.`,
     };

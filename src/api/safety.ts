@@ -18,7 +18,7 @@ const messages: Record<FailureCode, string> = {
   "source-offline": "Source is offline.",
   "unsupported-codec": "Media codec is unsupported.",
   "unsupported-api": "Server response or API is unsupported.",
-  network: "Server is unreachable.",
+  network: "A connection or playback operation failed.",
   ice: "Media connection failed.",
   timeout: "Request timed out.",
   buffer: "Media buffer failed.",
@@ -43,6 +43,56 @@ export function failure(
 }
 /** Diagnostics are an allowlist, never a serialization of config, errors or wire data. */
 export function safeDiagnostic(error: unknown): PlaybackFailure {
+  const details: Partial<PlaybackFailure> = {};
+  if (error instanceof NvrError) {
+    const f = error.failure;
+    if (
+      f.phase &&
+      [
+        "api-request",
+        "response-body",
+        "http-response",
+        "json-response",
+        "session-connect",
+        "camera-discovery",
+        "client-config",
+        "source-selection",
+        "playback-start",
+      ].includes(f.phase ?? "")
+    )
+      details.phase = f.phase;
+    if (
+      f.operation &&
+      [
+        "auth.verify",
+        "auth.login",
+        "auth.totp",
+        "streams.summary",
+        "client.config",
+        "ice.servers",
+        "webrtc.offer",
+        "hls.media",
+        "snapshot",
+        "camera.control",
+        "api.other",
+      ].includes(f.operation ?? "")
+    )
+      details.operation = f.operation;
+    if (
+      f.browserError &&
+      [
+        "TypeError",
+        "AbortError",
+        "NetworkError",
+        "SecurityError",
+        "NotAllowedError",
+        "NotSupportedError",
+        "InvalidStateError",
+        "SyntaxError",
+      ].includes(f.browserError ?? "")
+    )
+      details.browserError = f.browserError;
+  }
   return error instanceof NvrError
     ? {
         code: error.failure.code,
@@ -53,8 +103,41 @@ export function safeDiagnostic(error: unknown): PlaybackFailure {
         ...(error.failure.retryAfterMs === undefined
           ? {}
           : { retryAfterMs: error.failure.retryAfterMs }),
+        ...details,
       }
     : { code: "network", message: messages.network };
+}
+/** Fixed stage/operation labels and exception names only; never error text or URLs. */
+export function contextualFailure(
+  error: unknown,
+  phase: NonNullable<PlaybackFailure["phase"]>,
+  operation?: PlaybackFailure["operation"],
+): NvrError {
+  const safe = safeDiagnostic(error);
+  const browserError =
+    error instanceof Error &&
+    [
+      "TypeError",
+      "AbortError",
+      "NetworkError",
+      "SecurityError",
+      "NotAllowedError",
+      "NotSupportedError",
+      "InvalidStateError",
+      "SyntaxError",
+    ].includes(error.name)
+      ? (error.name as PlaybackFailure["browserError"])
+      : undefined;
+  return new NvrError(
+    safeDiagnostic(
+      new NvrError({
+        ...safe,
+        phase: safe.phase ?? phase,
+        ...(operation && !safe.operation ? { operation } : {}),
+        ...(!safe.browserError && browserError ? { browserError } : {}),
+      }),
+    ),
+  );
 }
 export function normalizeProfile(
   config: Pick<

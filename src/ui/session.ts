@@ -1,4 +1,9 @@
-import { createNvrClient, safeDiagnostic, selectSource } from "../api";
+import {
+  createNvrClient,
+  safeDiagnostic,
+  selectSource,
+  contextualFailure,
+} from "../api";
 import { createPlaybackController } from "../playback";
 import { createTalkController } from "../audio";
 import { createWebRtcAdapter } from "../transports/webrtc";
@@ -22,6 +27,7 @@ import {
   type PlaybackSnapshot,
   type PtzAxes,
   type SourceSelection,
+  type PlaybackFailure,
 } from "../contracts";
 import {
   availability,
@@ -78,6 +84,15 @@ export class ViewerSession {
   private ptzCleanup = new Set<Promise<unknown>>();
   private moveAborts = new Set<AbortController>();
   private disposal: Promise<void> | undefined;
+  private failures: {
+    at: string;
+    state: string;
+    attempt: number;
+    transport?: string;
+    failure: PlaybackFailure;
+  }[] = [];
+  private lastFailureKey = "";
+  private startAbort: AbortController | undefined;
   constructor(
     readonly config: CardConfigV1,
     readonly video: HTMLVideoElement,
@@ -100,7 +115,20 @@ export class ViewerSession {
     this.unsubscribe = this.playback.subscribe((snapshot) => {
       const previous = this.snapshot;
       this.snapshot = snapshot;
-      if (snapshot.failure) this.fallbackReason = snapshot.failure.message;
+      if (snapshot.failure) {
+        this.fallbackReason = this.failureSummary(snapshot.failure);
+        if (
+          [
+            "recovering",
+            "failed",
+            "offline",
+            "denied",
+            "auth-required",
+            "suspended",
+          ].includes(snapshot.state)
+        )
+          this.recordFailure(snapshot.failure);
+      }
       if (snapshot.state === "auth-required")
         this.auth =
           snapshot.failure?.code === "password-change"
@@ -123,6 +151,112 @@ export class ViewerSession {
   get alive(): boolean {
     return !this.abort.signal.aborted;
   }
+  private failureSummary(failure: PlaybackFailure): string {
+    return [
+      failure.message,
+      failure.operation,
+      failure.phase,
+      failure.status ? `HTTP ${failure.status}` : undefined,
+      failure.browserError,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  private recordFailure(failure: PlaybackFailure): void {
+    const safe = safeDiagnostic(new NvrError(failure));
+    const key = JSON.stringify([this.snapshot.attempt, safe]);
+    if (key === this.lastFailureKey) return;
+    this.lastFailureKey = key;
+    this.failures.push({
+      at: new Date().toISOString(),
+      state: this.snapshot.state,
+      attempt: this.snapshot.attempt,
+      ...(this.snapshot.transport
+        ? { transport: this.snapshot.transport }
+        : {}),
+      failure: safe,
+    });
+    this.failures = this.failures.slice(-10);
+  }
+  diagnostics() {
+    return {
+      diagnosticsVersion: 1,
+      at: new Date().toISOString(),
+      state: this.snapshot.state,
+      transport: this.snapshot.transport ?? null,
+      attempt: this.snapshot.attempt,
+      secureContext: globalThis.isSecureContext === true,
+      browserOnlineHint: globalThis.navigator?.onLine ?? null,
+      recentFailures: this.failures.map((item) => ({
+        ...item,
+        failure: { ...item.failure },
+      })),
+    };
+  }
+  async retry(): Promise<void> {
+    if (!this.alive || this.authBusy) return;
+    this.message = "";
+    if (!this.source || !this.caps) await this.start();
+    else await this.playback.retry();
+  }
+  private async startupRead<T>(
+    run: () => Promise<T>,
+    phase: NonNullable<PlaybackFailure["phase"]>,
+    signal: AbortSignal,
+  ): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+      if (signal.aborted)
+        throw contextualFailure(
+          new NvrError({ code: "cancelled", message: "" }),
+          phase,
+        );
+      try {
+        return await run();
+      } catch (cause) {
+        const error = contextualFailure(cause, phase);
+        const f = error.failure;
+        const safeRead = [
+          "auth.verify",
+          "streams.summary",
+          "client.config",
+        ].includes(f.operation ?? "");
+        if (
+          signal.aborted ||
+          !safeRead ||
+          !["network", "timeout", "proxy"].includes(f.code) ||
+          f.status === 401 ||
+          f.status === 403 ||
+          attempt >= this.config.retry.attempts
+        )
+          throw error;
+        this.recordFailure(f);
+        this.fallbackReason = this.failureSummary(f);
+        this.message = `Retrying connection (${attempt + 1}/${this.config.retry.attempts}) · ${this.failureSummary(f)}`;
+        this.changed();
+        const base = Math.min(
+          this.config.retry.cap_ms,
+          this.config.retry.base_ms * 2 ** attempt,
+        );
+        const delay = Math.max(
+          100,
+          Math.min(
+            this.config.retry.cap_ms,
+            base * (1 + this.config.retry.jitter * (2 * Math.random() - 1)),
+          ),
+        );
+        await new Promise<void>((resolve) => {
+          const done = () => {
+            clearTimeout(timer);
+            signal.removeEventListener("abort", done);
+            resolve();
+          };
+          const timer = setTimeout(done, delay);
+          signal.addEventListener("abort", done, { once: true });
+          if (signal.aborted) done();
+        });
+      }
+    }
+  }
   private fail(error: unknown, action?: Action): void {
     if (!this.alive) return;
     const safe = safeDiagnostic(error);
@@ -131,20 +265,30 @@ export class ViewerSession {
       (safe.code === "policy" || safe.status === 401 || safe.status === 403)
     )
       this.denied.add(action);
-    this.message = safe.message;
+    this.recordFailure(safe);
+    this.message = this.failureSummary(safe);
     this.changed();
   }
   async start(credentials?: Credentials, otp?: string): Promise<void> {
     const revision = ++this.startRevision;
+    this.startAbort?.abort();
+    this.startAbort = new AbortController();
+    const signal = AbortSignal.any([this.abort.signal, this.startAbort.signal]);
+    this.message = "";
     this.authBusy = true;
     this.changed();
     const current = () => this.alive && revision === this.startRevision;
+    let phase: NonNullable<PlaybackFailure["phase"]> = "session-connect";
     try {
-      const options = { signal: this.abort.signal };
-      const result =
-        otp && this.challenge
-          ? await this.client.completeTotp(this.challenge, otp, options)
-          : await this.client.connect(credentials, options);
+      const options = { signal };
+      const result = await this.startupRead(
+        () =>
+          otp && this.challenge
+            ? this.client.completeTotp(this.challenge, otp, options)
+            : this.client.connect(credentials, options),
+        phase,
+        signal,
+      );
       if (!current()) return;
       if (result.kind !== "authenticated" || result.mustChangePassword) {
         this.auth =
@@ -155,21 +299,34 @@ export class ViewerSession {
       }
       this.auth = undefined;
       this.challenge = "";
+      phase = "camera-discovery";
       const [inventory, caps] = await Promise.all([
-        this.client.discover(options),
-        this.client.clientConfig(options),
+        this.startupRead(
+          () => this.client.discover(options),
+          "camera-discovery",
+          signal,
+        ),
+        this.startupRead(
+          () => this.client.clientConfig(options),
+          "client-config",
+          signal,
+        ),
       ]);
       if (!current()) return;
+      phase = "source-selection";
       this.source = selectSource(this.config, inventory);
       this.camera = inventory.find((c) => c.name === this.source?.camera);
       this.caps = caps;
+      this.message = "";
       this.changed();
+      phase = "playback-start";
       await this.playback.start(this.video, this.config, this.abort.signal);
       if (current()) await this.playback.setVisible(this.playbackVisible);
     } catch (error) {
       if (!current()) return;
+      this.startAbort?.abort();
       if (safeDiagnostic(error).code === "auth") this.auth = "credentials";
-      this.fail(error);
+      this.fail(contextualFailure(error, phase));
     } finally {
       if (current()) {
         this.authBusy = false;

@@ -336,13 +336,13 @@ export class LightNvrCardEditor extends LitElement {
       currentCamera,
     );
     return html`
-      <p class="hint">Full browser playback requires a same-origin proxy prefix on the Home Assistant origin, routed to lightNVR with isolated session cookies and WebSocket support. Remote HTTPS alone does not provide this. Never expose raw go2rtc.</p>
+      <p class="hint">Use the NVR-side gateway for same-site HTTPS HA/NVR hostnames, or an existing same-origin proxy prefix. Both require scoped session cookies and WebSocket support. A TLS sidecar alone does not configure cross-origin access. Never expose raw go2rtc.</p>
       <fieldset><legend>1. Connect</legend>
-        ${this.field("server", "lightNVR root or same-origin prefix")}
+        ${this.field("server", "lightNVR gateway URL or same-origin prefix")}
         ${this.field("auth", "Authentication", ["session", "basic"])}
         <p class="hint">Basic supports verified fetch routes only; browser WebSockets and native HLS cannot carry its Authorization header. Use the proxy with a cookie session for full support.</p>
         ${this.field("credential_storage", "Credential storage", ["dashboard", "session"])}
-        <p class="hint">Dashboard credentials are readable by dashboard configuration readers. Session credentials stay in this editor’s memory and are omitted from saved configuration; reauthentication may be needed in the viewer.</p>
+        <p class="hint">Dashboard credentials are saved in the card configuration. Session credentials are omitted from saved configuration: the viewer reuses its NVR session cookie, and asks you to sign in when that cookie is missing or expired.</p>
         ${this.field("username", "Username")}${this.field("password", "Password")}
         <button ?disabled=${m.busy} @click=${() => {
           this.clearPreview();

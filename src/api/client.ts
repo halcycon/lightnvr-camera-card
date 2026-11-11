@@ -20,6 +20,7 @@ import {
   type ControlResult,
   type ControlState,
   type Detection,
+  type PlaybackFailure,
 } from "../contracts";
 import {
   basicHeader,
@@ -29,6 +30,7 @@ import {
   normalizeProfile,
   scopedUrl,
   throwIfAborted,
+  contextualFailure,
 } from "./safety";
 import { knowledge, mapCamera, transportPreference } from "./mapping";
 
@@ -402,11 +404,31 @@ class Client implements NvrClient {
       (this.profile.sameOrigin || this.scope.cookieGateway)
     );
   }
+  private operation(path: string): NonNullable<PlaybackFailure["operation"]> {
+    const endpoint = path.split("?")[0];
+    if (endpoint === "api/auth/verify") return "auth.verify";
+    if (endpoint === "api/auth/login") return "auth.login";
+    if (endpoint === "api/auth/login/totp") return "auth.totp";
+    if (endpoint === "api/streams") return "streams.summary";
+    if (endpoint === "api/client-config") return "client.config";
+    if (endpoint === "api/ice-servers") return "ice.servers";
+    if (endpoint?.endsWith("/api/webrtc")) return "webrtc.offer";
+    if (endpoint?.endsWith("/frame.jpeg")) return "snapshot";
+    if (
+      endpoint?.startsWith("hls/") ||
+      endpoint?.includes("/api/hls/") ||
+      endpoint?.endsWith("/stream.m3u8")
+    )
+      return "hls.media";
+    if (endpoint?.startsWith("api/streams/")) return "camera.control";
+    return "api.other";
+  }
   private async raw(
     path: string,
     init: RequestInit = {},
     shared = false,
   ): Promise<Response> {
+    const operation = this.operation(path);
     if (!shared) this.alive(init.signal ?? undefined);
     if (this.scope.conflicted) throw failure("configuration");
     const url = scopedUrl(this.profile, path);
@@ -482,9 +504,19 @@ class Client implements NvrClient {
                 finish();
                 controller.close();
               } else controller.enqueue(result.value);
-            } catch {
+            } catch (error) {
               finish();
-              controller.error(signal.aborted ? reason() : failure("network"));
+              const diagnostic = contextualFailure(
+                signal.aborted ? reason() : error,
+                "response-body",
+                operation,
+              );
+              controller.error(
+                new NvrError({
+                  ...diagnostic.failure,
+                  status: response.status,
+                }),
+              );
             }
           },
           async cancel() {
@@ -496,12 +528,24 @@ class Client implements NvrClient {
       );
     } catch (error) {
       cleanup();
-      if (signal.aborted) throw reason();
-      if (error instanceof NvrError) throw error;
-      throw failure("network");
+      throw contextualFailure(
+        signal.aborted ? reason() : error,
+        "api-request",
+        operation,
+      );
     }
   }
   private async check(response: Response, path = ""): Promise<Response> {
+    try {
+      return await this.checkResponse(response, path);
+    } catch (error) {
+      throw contextualFailure(error, "http-response", this.operation(path));
+    }
+  }
+  private async checkResponse(
+    response: Response,
+    path = "",
+  ): Promise<Response> {
     if (response.ok) return response;
     const status = response.status;
     if (status === 401 || status === 403) this.scope.memo.clear();
@@ -602,8 +646,24 @@ class Client implements NvrClient {
     auth = false,
     shared = true,
   ): Promise<T> {
+    try {
+      return await this.decodeJson(path, schema, init, auth, shared);
+    } catch (error) {
+      throw contextualFailure(error, "json-response", this.operation(path));
+    }
+  }
+  private async decodeJson<T>(
+    path: string,
+    schema: z.ZodType<T>,
+    init: RequestInit,
+    auth: boolean,
+    shared: boolean,
+  ): Promise<T> {
+    const headers = new Headers(init.headers);
+    headers.set("Accept", "application/json");
+    init = { ...init, headers };
     const response = auth
-      ? await this.check(await this.raw(path, init, true))
+      ? await this.check(await this.raw(path, init, true), path)
       : await this.request(path, init, shared);
     if (
       !/^application\/json(?:\s*;|$)/i.test(
@@ -621,7 +681,12 @@ class Client implements NvrClient {
       return parsed.data;
     } catch (error) {
       if (error instanceof NvrError) throw error;
-      throw failure("unsupported-api", response.status);
+      throw new NvrError({
+        ...failure("unsupported-api", response.status).failure,
+        ...(error instanceof SyntaxError
+          ? { browserError: "SyntaxError" as const }
+          : {}),
+      });
     }
   }
   private async cached<T>(

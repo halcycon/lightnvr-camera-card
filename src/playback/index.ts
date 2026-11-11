@@ -214,6 +214,7 @@ export function createPlaybackController({
     a.failed = true;
     const end = terminal(f);
     const next =
+      !!a.adapter &&
       !end &&
       f.code !== "source-offline" &&
       f.code !== "rate-limit" &&

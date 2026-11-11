@@ -202,7 +202,18 @@ export async function crossOriginGateway() {
       customElements.get("lightnvr-camera-card"),
     );
     const frames = {};
+    let abortedVerify = false;
     for (const transport of ["mse", "hls"]) {
+      if (transport === "hls")
+        await page.route(
+          nvrOrigin + "/ha-card/api/auth/verify",
+          async (route) => {
+            if (!abortedVerify) {
+              abortedVerify = true;
+              await route.abort("failed");
+            } else await route.continue();
+          },
+        );
       await page.evaluate(
         ({ f, gateway, transport }) => {
           const card = document.createElement("lightnvr-camera-card");
@@ -211,9 +222,10 @@ export async function crossOriginGateway() {
             server: gateway,
             stream: f.source,
             source: f.source,
-            username: f.username,
-            password: f.password,
-            credential_storage: "dashboard",
+            ...(transport === "mse"
+              ? { username: f.username, password: f.password }
+              : {}),
+            credential_storage: transport === "mse" ? "dashboard" : "session",
             transports: [transport],
             controls: { style: transport === "mse" ? "overlay" : "standard" },
             audio: { listen: false, muted: true, microphone: false },
@@ -262,6 +274,25 @@ export async function crossOriginGateway() {
             .querySelector("lightnvr-camera-card")
             .shadowRoot.querySelector("video").videoWidth,
       );
+      if (transport === "hls") {
+        const diagnostics = await page
+          .locator("lightnvr-camera-card .diagnostics pre")
+          .textContent();
+        const parsed = JSON.parse(diagnostics);
+        assert(
+          parsed.recentFailures.some(
+            (item) =>
+              item.failure.operation === "auth.verify" &&
+              item.failure.phase === "api-request" &&
+              item.failure.browserError === "TypeError",
+          ),
+        );
+        assert(
+          !diagnostics.includes(fixture.password) &&
+            !diagnostics.includes("nvr.example.test"),
+        );
+        await page.unroute(nvrOrigin + "/ha-card/api/auth/verify");
+      }
       if (transport === "mse") {
         await page
           .getByRole("button", { name: "Camera settings", exact: true })
@@ -324,6 +355,111 @@ export async function crossOriginGateway() {
       );
       await page.waitForTimeout(100);
     }
+    await page.evaluate(
+      async ({ f, gateway }) => {
+        const editor = await customElements
+          .get("lightnvr-camera-card")
+          .getConfigElement();
+        editor.setConfig({
+          type: "custom:lightnvr-camera-card",
+          server: gateway,
+          stream: f.source,
+          username: f.username,
+          password: f.password,
+          credential_storage: "dashboard",
+        });
+        editor.addEventListener("config-changed", (event) => {
+          window.sessionSavedConfig = event.detail.config;
+          editor.setConfig(event.detail.config);
+        });
+        document.body.append(editor);
+      },
+      { f: fixture, gateway: nvrOrigin + "/ha-card/" },
+    );
+    await page
+      .locator("lightnvr-camera-card-editor label")
+      .filter({ hasText: "Credential storage" })
+      .locator("select")
+      .selectOption("session");
+    await page
+      .getByRole("button", { name: "2. Test connection", exact: true })
+      .click();
+    await page.waitForFunction(
+      () =>
+        document.querySelector("lightnvr-camera-card-editor").model.tested ===
+        true,
+      null,
+      { timeout: 30000 },
+    );
+    assert.equal(
+      await page.evaluate(
+        () =>
+          window.sessionSavedConfig.credential_storage === "session" &&
+          !("username" in window.sessionSavedConfig) &&
+          !("password" in window.sessionSavedConfig),
+      ),
+      true,
+    );
+    await page.evaluate(() =>
+      document.querySelector("lightnvr-camera-card-editor").remove(),
+    );
+    const loginPosts = observations.filter((o) => o.method === "POST").length;
+    await page.reload();
+    await page.waitForFunction(() =>
+      customElements.get("lightnvr-camera-card"),
+    );
+    const mountSession = async () =>
+      page.evaluate(
+        ({ gateway, source }) => {
+          const card = document.createElement("lightnvr-camera-card");
+          card.setConfig({
+            type: "custom:lightnvr-camera-card",
+            server: gateway,
+            stream: source,
+            source,
+            credential_storage: "session",
+            transports: ["mse"],
+            audio: { listen: false, muted: true, microphone: false },
+          });
+          document.body.append(card);
+        },
+        { gateway: nvrOrigin + "/ha-card/", source: fixture.source },
+      );
+    const waitSessionFrame = async () =>
+      page.waitForFunction(
+        () => {
+          const v = document
+            .querySelector("lightnvr-camera-card")
+            ?.shadowRoot?.querySelector("video");
+          return v && v.videoWidth > 0 && v.currentTime > 0;
+        },
+        null,
+        { timeout: 45000 },
+      );
+    await mountSession();
+    await waitSessionFrame();
+    assert.equal(
+      observations.filter((o) => o.method === "POST").length,
+      loginPosts,
+      "reload must reuse the cookie without saved credentials or a login POST",
+    );
+    await page.evaluate(() =>
+      document.querySelector("lightnvr-camera-card").remove(),
+    );
+    await context.clearCookies();
+    await mountSession();
+    await page.getByLabel("Username", { exact: true }).fill(fixture.username);
+    await page.getByLabel("Password", { exact: true }).fill(fixture.password);
+    await page
+      .getByRole("button", {
+        name: "Authenticate for this session",
+        exact: true,
+      })
+      .click();
+    await waitSessionFrame();
+    await page.evaluate(() =>
+      document.querySelector("lightnvr-camera-card").remove(),
+    );
     const sdp = await page.evaluate(
       async ({ gateway, source }) => {
         const pc = new RTCPeerConnection({ iceServers: [] });
@@ -558,6 +694,10 @@ export async function crossOriginGateway() {
         sdp201: true,
         websocketWebRTCAnswer: true,
         overlayControlsAndTouchTargets: true,
+        sessionSwitchAndEditorSave: true,
+        sessionReloadWithoutSavedCredentials: true,
+        missingSessionPromptsAndPlays: true,
+        bootstrapFetchFailureRetriedAndDiagnosed: true,
         authenticatedWSS: true,
         artifactSHA256: createHash("sha256").update(bundle).digest("hex"),
         readableAuthDenial: true,

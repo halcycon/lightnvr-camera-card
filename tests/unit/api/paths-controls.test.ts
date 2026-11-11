@@ -158,6 +158,8 @@ describe("URL and authority boundaries", () => {
         code: "source-offline",
         message: "Source is offline.",
         status: 500,
+        phase: "http-response",
+        operation: "webrtc.offer",
       });
       expect(JSON.stringify(error)).not.toContain(text);
     }

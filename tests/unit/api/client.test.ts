@@ -86,6 +86,42 @@ async function code(
 }
 
 describe("connection and credential scopes", () => {
+  it("identifies failed session verification without exposing the browser exception text", async () => {
+    const f = fixture(() => {
+      throw new TypeError("https://private.invalid/password=SECRET");
+    });
+    try {
+      await f.make().connect();
+      throw Error("expected failure");
+    } catch (error) {
+      expect(safeDiagnostic(error)).toMatchObject({
+        code: "network",
+        phase: "api-request",
+        operation: "auth.verify",
+        browserError: "TypeError",
+      });
+      expect(JSON.stringify(safeDiagnostic(error))).not.toMatch(
+        /private|SECRET|password/,
+      );
+    }
+  });
+  it("requests JSON for cookie verification and preserves a readable HTTP auth denial", async () => {
+    const f = fixture((_url, init) => {
+      expect(new Headers(init.headers).get("Accept")).toBe("application/json");
+      return json({}, 401);
+    });
+    try {
+      await f.make().connect();
+      throw Error("expected failure");
+    } catch (error) {
+      expect(safeDiagnostic(error)).toMatchObject({
+        code: "auth",
+        status: 401,
+        phase: "http-response",
+        operation: "auth.verify",
+      });
+    }
+  });
   it.each([undefined, "unexpected", "same-site-session-v1"])(
     "requires an explicit HTTPS gateway marker for cross-origin cookie media: %s",
     async (marker) => {
@@ -653,7 +689,20 @@ describe("cancellation, errors and recovery", () => {
   });
   it("redacts arbitrary diagnostics instead of forwarding raw exceptions", () => {
     expect(safeDiagnostic(new Error("secret https://private.invalid"))).toEqual(
-      { code: "network", message: "Server is unreachable." },
+      {
+        code: "network",
+        message: "A connection or playback operation failed.",
+      },
+    );
+    const unsafe = new NvrError({
+      code: "network",
+      message: "SECRET",
+      phase: "https://private.invalid" as never,
+      operation: "PASSWORD" as never,
+      browserError: "cookie=SECRET" as never,
+    });
+    expect(JSON.stringify(safeDiagnostic(unsafe))).not.toMatch(
+      /SECRET|private|PASSWORD|cookie/,
     );
   });
 });
