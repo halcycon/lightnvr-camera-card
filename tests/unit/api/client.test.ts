@@ -86,6 +86,35 @@ async function code(
 }
 
 describe("connection and credential scopes", () => {
+  it.each([undefined, "unexpected", "same-site-session-v1"])(
+    "requires an explicit HTTPS gateway marker for cross-origin cookie media: %s",
+    async (marker) => {
+      const f = fixture(() =>
+        json(
+          identity,
+          200,
+          marker ? { "X-LightNVR-Card-Gateway": marker } : {},
+        ),
+      );
+      const c = f.make({ server: "https://nvr.example.invalid/ha-card/" });
+      expect(c.profile.sameOrigin).toBe(false);
+      expect(c.cookieMediaAllowed?.()).toBe(false);
+      await c.verify();
+      expect(c.cookieMediaAllowed?.()).toBe(marker === "same-site-session-v1");
+      expect(c.profile.sameOrigin).toBe(false);
+      expect(f.fetch.mock.calls[0]?.[1]?.credentials).toBe("include");
+    },
+  );
+  it("does not trust a gateway marker received over HTTP", async () => {
+    const f = fixture(() =>
+      json(identity, 200, {
+        "X-LightNVR-Card-Gateway": "same-site-session-v1",
+      }),
+    );
+    const c = f.make({ server: "http://nvr.example.invalid/ha-card/" });
+    await c.verify();
+    expect(c.cookieMediaAllowed?.()).toBe(false);
+  });
   it("connects with viewer credentials, discovers and selects without admin calls", async () => {
     const f = fixture((url) =>
       url.pathname.endsWith("/verify")

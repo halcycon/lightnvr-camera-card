@@ -1,8 +1,10 @@
 # Connecting local or external lightNVR servers
 
+For HTTPS HA/NVR hostnames within the same site, start with the [NVR-side gateway](nvr-side-gateway.md). It keeps HA's DNS, HTTPS listener and tunnel independent of the NVR stack. **The HA-edge routing requirements below apply only to this optional HA-origin topology.** Do not move HA behind the NVR proxy merely to use the card.
+
 **lightNVR does not need to run on the Home Assistant host, or as an Add-on/App.** It may run on another LAN machine, across a VPN, or behind its own publicly reachable HTTPS reverse proxy. The routing helper must be able to reach that server. The dedicated container network below connects the HA-facing edge to the helper; it does not require HA or lightNVR to run in those containers or on that host.
 
-“Same origin” describes the URL seen by the browser, not the physical location of either server. For the tested lightNVR release, full authenticated playback uses an HA-origin path that forwards to lightNVR over the network. Pointing the browser directly at an unrelated NVR hostname still has the limitations in [Direct mode](#direct-mode-observed-boundaries).
+“Same origin” describes the URL seen by the browser, not the physical location of either server. This topology uses an HA-origin path that forwards to lightNVR over the network. The separate NVR-side gateway explicitly supports same-site cross-origin clients; pointing directly at the ordinary NVR root still has the limitations in [Direct mode](#direct-mode-observed-boundaries).
 
 The supported reference topology routes an NVR prefix through **the reverse proxy that serves the Home Assistant dashboard origin**:
 

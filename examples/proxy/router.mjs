@@ -152,6 +152,12 @@ function responseHeaders(response, scope, path) {
     "clear-site-data",
   ])
     delete headers[name];
+  for (const name of Object.keys(headers))
+    if (
+      name.startsWith("access-control-") ||
+      name === "x-lightnvr-card-gateway"
+    )
+      delete headers[name];
   headers["cache-control"] = "no-store";
   return headers;
 }
@@ -172,6 +178,19 @@ export function createRouter(config) {
     )
       throw Error("HTTPS origins only");
     return url;
+  });
+  // Optional cross-origin access is for same-site HTTPS dashboard clients.
+  // It is deliberately separate from the public Host allowlist above.
+  const clientOrigins = (config.clientOrigins ?? []).map((value) => {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.origin !== value ||
+      url.username ||
+      url.password
+    )
+      throw Error("Exact HTTPS client origins only");
+    return url.origin;
   });
   for (const scope of config.scopes) {
     const url = new URL(scope.upstream);
@@ -226,8 +245,10 @@ export function createRouter(config) {
     )
       throw 403;
     if (
-      (req.headers.origin && req.headers.origin !== publicUrl.origin) ||
-      (upgrade && req.headers.origin !== publicUrl.origin) ||
+      (req.headers.origin &&
+        req.headers.origin !== publicUrl.origin &&
+        !clientOrigins.includes(req.headers.origin)) ||
+      (upgrade && !req.headers.origin) ||
       req.headers["sec-fetch-site"] === "cross-site"
     )
       throw 403;
@@ -277,7 +298,18 @@ export function createRouter(config) {
       headers.connection = "Upgrade";
       headers.upgrade = "websocket";
     }
-    return { scope, path, headers };
+    const cors =
+      req.headers.origin && req.headers.origin !== publicUrl.origin
+        ? {
+            "access-control-allow-origin": req.headers.origin,
+            "access-control-allow-credentials": "true",
+            "access-control-expose-headers":
+              "X-LightNVR-Card-Gateway, Content-Range, Accept-Ranges, Retry-After",
+            "x-lightnvr-card-gateway": "same-site-session-v1",
+            vary: "Origin",
+          }
+        : {};
+    return { scope, path, headers, cors };
   }
   const sockets = new Set();
   const server = http.createServer(
@@ -290,7 +322,33 @@ export function createRouter(config) {
         fail(res, typeof code === "number" ? code : 400);
         return;
       }
-      const { scope, path, headers } = route;
+      const { scope, path, headers, cors } = route;
+      if (req.method === "OPTIONS" && cors["access-control-allow-origin"]) {
+        const method = req.headers["access-control-request-method"];
+        const requested = String(
+          req.headers["access-control-request-headers"] ?? "",
+        )
+          .split(",")
+          .map((value) => value.trim().toLowerCase())
+          .filter(Boolean);
+        if (
+          !["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(method) ||
+          requested.some((name) => !["content-type", "range"].includes(name))
+        ) {
+          fail(res, 403);
+          return;
+        }
+        res.writeHead(204, {
+          ...cors,
+          "access-control-allow-methods": "GET, HEAD, POST, PUT, PATCH, DELETE",
+          "access-control-allow-headers": "Content-Type, Range",
+          "cache-control": "no-store",
+        });
+        res.end();
+        return;
+      }
+      for (const [name, value] of Object.entries(cors))
+        res.setHeader(name, value);
       if (Number(req.headers["content-length"] ?? 0) > MAX_REQUEST) {
         fail(res, 413);
         return;
@@ -316,6 +374,11 @@ export function createRouter(config) {
           let outgoing;
           try {
             outgoing = responseHeaders(response, scope, path);
+            if (cors["access-control-allow-origin"]) {
+              const vary = outgoing.vary;
+              Object.assign(outgoing, cors);
+              outgoing.vary = [vary, "Origin"].filter(Boolean).join(", ");
+            }
           } catch {
             response.destroy();
             fail(res, 502);

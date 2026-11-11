@@ -4,7 +4,7 @@ A Home Assistant dashboard card for an existing lightNVR server and its managed 
 
 **Two-way audio requires Home Assistant to be opened in a secure context (normally trusted HTTPS), microphone permission, HTTPS/WSS media signaling for the HTTPS dashboard, and a compatible camera with lightNVR backchannel enabled and talk permission. A Traefik TLS sidecar can provide HTTPS to the NVR; it does not by itself secure the HA document or solve cross-origin MSE.**
 
-Use the [same-origin connectivity recipe](docs/connectivity.md) for the full transport path. Direct cross-origin login and MSE are blocked by the tested lightNVR baseline. A TLS reverse proxy is not TURN and does not relay WebRTC UDP. [TLS and talk requirements](docs/tls-and-two-way-audio.md) explain localhost, internal/external HA URLs, ICE and browser permissions.
+For separate HTTPS hostnames within the same site, use the [NVR-side gateway](docs/nvr-side-gateway.md). The card connects directly to a scoped endpoint on the NVR hostname; HA keeps its existing DNS, HTTPS and tunnel routes. NVR downtime affects camera cards rather than HA access. Ordinary cross-origin access to the unmodified NVR root remains blocked by the tested server. The [HA-origin prefix recipe](docs/connectivity.md) is an optional alternative for existing suitable HA edges. A TLS reverse proxy is not TURN and does not relay WebRTC UDP. [TLS and talk requirements](docs/tls-and-two-way-audio.md) explain browser permissions and ICE.
 
 ![Actual Home Assistant showing generated test-pattern media](docs/images/ha-generated-mse.png)
 
@@ -45,12 +45,12 @@ Edit a dashboard → Add card → **lightNVR Camera Card**, or use the manual ca
 
 ```yaml
 type: custom:lightnvr-camera-card
-server: /lightnvr/front/
+server: https://nvr.example.test/ha-card/
 stream: front_door
 credential_storage: session
 ```
 
-The server path is a placeholder requiring the [HA-origin routing recipe](docs/connectivity.md). Use Connect/discovery in the visual editor to select a permitted camera and main/sub profile. Session credentials are entered interactively and omitted from saved config; reloads can require login. Dashboard-stored credentials are visible to everyone who can read its configuration. A masked password field is not a vault; UI dashboards do not promise `!secret` support.
+The server URL is a placeholder requiring the [NVR-side gateway](docs/nvr-side-gateway.md) on that host. This mode requires same-site HTTPS origins and browser session-cookie support; it does not promise third-party cookies between unrelated domains. Use Connect/discovery in the visual editor to select a permitted camera and main/sub profile. Session credentials are entered interactively and omitted from saved config; reloads can require login. Dashboard-stored credentials are visible to everyone who can read its configuration. A masked password field is not a vault; UI dashboards do not promise `!secret` support.
 
 The editor offers transport order, audio/PTT, controls, layout and playback visibility settings, plus explicit legacy import preview. Multi-camera YAML generation omits login credentials and redacts TURN secrets for review; paste the generated cards/grid yourself. It cannot silently insert sibling cards. See the [configuration reference and exact migration mapping](docs/configuration.md), [single card](examples/cards/single.yaml), [panel view](examples/cards/panel.yaml) and [native grid](examples/cards/grid.yaml).
 

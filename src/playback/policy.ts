@@ -12,7 +12,8 @@ export function transportAvailable(
   if (kind !== "hls" && capabilities.go2rtc === "denied") return false;
   if (
     kind === "mse" &&
-    (!client.profile.sameOrigin || client.profile.auth !== "session")
+    (!(client.cookieMediaAllowed?.() ?? client.profile.sameOrigin) ||
+      client.profile.auth !== "session")
   )
     return false;
   if (typeof window === "undefined") return true;

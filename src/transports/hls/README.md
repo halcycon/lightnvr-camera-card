@@ -20,14 +20,16 @@ even when native `canPlayType` returns `maybe` or `probably`. This follows the
 [pinned official hls.js 1.7.4 example](https://github.com/video-dev/hls.js/blob/v1.7.4/README.md#embedding-hlsjs):
 a nonempty native capability result does not guarantee an asset will decode.
 Native browser playback is used only when bundled hls.js is unsupported, native
-`canPlayType` supports HLS, and the client uses a same-origin, non-root,
-cookie-scoped proxy. Neither engine available means `unsupported-api` before
+`canPlayType` supports HLS, and the client uses a non-root, cookie-scoped proxy
+that is same-origin or explicitly advertises the HTTPS NVR-side gateway capability.
+Neither engine available means `unsupported-api` before
 requests. No engine switch follows a native failure. That proxy must
 implement the verified recipe in `docs/connectivity.md`: it confines playlists,
 children and redirects and preserves credential binding. A pathname alone cannot
 prove an operator deployed that recipe. This adapter cannot attach headers to
 native video, inspect its child requests, or validate an arbitrary proxy. Basic,
-cross-origin and unscoped roots use hls.js where available.
+unverified cross-origin and unscoped roots use hls.js where available. Native
+Safari/Companion playback through the NVR-side gateway is not established.
 
 **Deliberate limitation:** native video hides HTTP status. Every native `error`,
 including apparent network/decode failures, errors without a MediaError,

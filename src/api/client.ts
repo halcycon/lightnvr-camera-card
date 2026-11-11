@@ -49,6 +49,7 @@ interface Scope {
   controller: AbortController;
   authenticatedUntil: number;
   conflicted: boolean;
+  cookieGateway: boolean;
 }
 export interface ClientRuntime {
   fetch?: typeof fetch;
@@ -142,6 +143,7 @@ export function createClientFactory(
         controller: new AbortController(),
         authenticatedUntil: 0,
         conflicted: false,
+        cookieGateway: false,
       };
       scopes.set(key, scope);
     }
@@ -394,6 +396,12 @@ class Client implements NvrClient {
     this.alive(options.signal);
     return this.wait(this.verifyShared(), options.signal);
   }
+  cookieMediaAllowed(): boolean {
+    return (
+      this.profile.auth === "session" &&
+      (this.profile.sameOrigin || this.scope.cookieGateway)
+    );
+  }
   private async raw(
     path: string,
     init: RequestInit = {},
@@ -441,6 +449,15 @@ class Client implements NvrClient {
         await response.body?.cancel().catch(() => {});
         throw failure("proxy");
       }
+      // CORS must expose this exact opt-in marker. It describes browser cookie
+      // transport, never camera permissions; authenticated discovery still follows.
+      if (
+        url.protocol === "https:" &&
+        this.profile.auth === "session" &&
+        response.headers.get("X-LightNVR-Card-Gateway") ===
+          "same-site-session-v1"
+      )
+        this.scope.cookieGateway = true;
       if (!response.body) {
         cleanup();
         return response;

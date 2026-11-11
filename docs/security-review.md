@@ -10,6 +10,10 @@ The proxy-test utility now uses the generated certificate as its CA for every HT
 
 External NVR ingress support adds explicit per-scope `forwardAuthority: "upstream"`. It translates outbound Host, supplied Origin and forwarded authority to the configured upstream only after validating the socket peer, exact public Host/Origin, forwarding headers, route and scoped cookie. It never translates a hostile or null browser Origin into an accepted request. The default retains the public authority. Destination URL/certificate identity remains fixed by configuration, and authentication remains lightNVR's responsibility; the helper injects no account credentials. Owned TLS tests model an external hostname-routed ingress and verify HTTP/WS authority translation, preserved upstream 401 denial, certificate/SNI identity and rejection of hostile Origins before forwarding. They do not establish production Internet/NAT compatibility.
 
+## NVR-side gateway
+
+The optional NVR-side gateway additionally accepts exact configured HTTPS `clientOrigins` independently of its public Host list. It rejects unlisted/null/duplicate Origins, cross-site fetch metadata and untrusted peers before upstream authority translation. Credentialed CORS/preflight applies only inside validated scopes; the helper strips upstream CORS/capability headers and emits its own exact HTTPS cookie-media marker. SameSite=Lax, host-only scoped sessions are retained; this is not general third-party cookie support. The client marker only changes cookie-transport eligibility and cannot replace authentication, discovery, action grants or terminal-denial handling. Browser tests cover actual credentialed WSS, decoded MSE/HLS, readable upstream 401, denied preflight requests, hostile Origins/WebSockets, and cookie isolation. The owned HA-origin HTML page remained available after the gateway stopped; no HA service route points at the NVR.
+
 ## Three bundled-library findings
 
 Existing card tests also verify that a server detection label containing `<script>` renders as text with no script element.

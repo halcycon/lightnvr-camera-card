@@ -29,7 +29,10 @@ export function createMseAdapter(
       if (context.capabilities.go2rtc === "denied") throw failure("policy");
       if (
         context.client.profile.auth !== "session" ||
-        !context.client.profile.sameOrigin
+        !(
+          context.client.cookieMediaAllowed?.() ??
+          context.client.profile.sameOrigin
+        )
       )
         throw failure("configuration");
       const managed =

@@ -14,7 +14,11 @@ returns a generic 401 before issuing a challenge, is not supported by the frozen
 Credentials/LoginResult interface; do not retry it as a network failure. Password
 changes require the upstream UI. Redirects returned by login are never followed.
 
-The normal route is a same-origin, separately cookie-scoped lightNVR prefix.
+Supported routes use separately cookie-scoped prefixes: either a same-origin
+prefix, or an NVR-side gateway for same-site HTTPS dashboard origins. The latter
+exposes an exact HTTPS capability marker after enforcing its Origin allowlist;
+the client retains the factual cross-origin profile and enables cookie media
+only after observing that marker. Authentication/permissions remain separate.
 Session login checks an existing cookie's identity before replacing a session.
 A configured username is enforced even without a configured password. Conflicts
 block the scope until every holder disposes it; a new scope still verifies any

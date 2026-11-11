@@ -4,6 +4,21 @@ import { mockClient, Video } from "./fixture";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("known renderer exclusions", () => {
+  it("allows MSE for explicitly verified cross-origin cookie gateways", () => {
+    vi.stubGlobal("window", {});
+    vi.stubGlobal("MediaSource", class {});
+    const api = mockClient();
+    const client = api.asClient();
+    client.profile.sameOrigin = false;
+    client.cookieMediaAllowed = () => true;
+    expect(
+      transportAvailable("mse", api.settings, client, new Video().asVideo()),
+    ).toBe(true);
+    client.cookieMediaAllowed = () => false;
+    expect(
+      transportAvailable("mse", api.settings, client, new Video().asVideo()),
+    ).toBe(false);
+  });
   it("skips missing browser WebRTC/MSE APIs and accepts native HLS", () => {
     vi.stubGlobal("window", {});
     vi.stubGlobal("RTCPeerConnection", undefined);

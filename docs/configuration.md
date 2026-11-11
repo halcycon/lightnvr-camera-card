@@ -7,7 +7,7 @@ Use `type: custom:lightnvr-camera-card`. The version-1 schema is strict: unknown
 | Key | Default / allowed value | Meaning |
 | --- | --- | --- |
 | `version` | `1` | Config version. |
-| `server` | Required | HTTP(S) lightNVR root or same-origin path, e.g. `/lightnvr/front/`. No URL userinfo, query, fragment or protocol-relative URL. Use a trailing slash. HTTPS dashboard requires secure media routes. |
+| `server` | Required | lightNVR/gateway root, e.g. `https://nvr.example.test/ha-card/` for the NVR-side gateway, or `/lightnvr/front/` for an HA-origin prefix. No URL userinfo, query, fragment or protocol-relative URL. Use a trailing slash. HTTPS dashboard requires secure media routes. |
 | `go2rtc_path` | `go2rtc/` | Relative path of slash-terminated alphanumeric/underscore/hyphen segments under the lightNVR root. Never a raw public go2rtc host. |
 | `viewer_url` | Unset | Explicit HTTP(S) NVR web UI root for open/timeline links. The scoped API proxy does not serve the full web UI. No userinfo/query/fragment. |
 | `username`, `password` | Unset | lightNVR login credentials; never HA credentials. Saved dashboard values are readable by configuration readers. |
@@ -85,4 +85,4 @@ The visual editor's import is a **preview**; review before saving. Only the supp
 | `ui: false` | All supported control flags false. `ui: true` or absent retains defaults. |
 | HA layout/condition fields | Preserved using the native metadata fields above. |
 
-The example URL is a placeholder, never a real credential. Audio-only import is rejected. Microphone with a forced non-WebRTC mode is rejected by the new schema. Manual sources do not invent a camera identity for mutations/native HLS. Legacy options from other cards are not silently copied. Saved credentials require review; prefer session storage and an HA-origin prefix after import.
+The example URL is a placeholder, never a real credential. Audio-only import is rejected. Microphone with a forced non-WebRTC mode is rejected by the new schema. Manual sources do not invent a camera identity for mutations/native HLS. Legacy options from other cards are not silently copied. Saved credentials require review; prefer session storage and a supported scoped gateway after import.

@@ -1,4 +1,5 @@
 import { test } from "@playwright/test";
+import { crossOriginGateway } from "./cross-origin.mjs";
 import { fixtureSafety, upstreamSmoke } from "./harness.mjs";
 import {
   authorityConfinement,
@@ -21,4 +22,8 @@ test("scoped helper rejects ambiguity and confines HLS/authentication", async ()
 test("Traefik TLS/WSS browser smoke against the actual isolated upstream", async () => {
   test.setTimeout(180_000);
   await upstreamSmoke();
+});
+test("NVR-side gateway plays across same-site HTTPS origins without routing the HA origin", async () => {
+  test.setTimeout(180_000);
+  await crossOriginGateway();
 });

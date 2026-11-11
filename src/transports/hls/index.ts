@@ -46,10 +46,12 @@ export function createHlsAdapter(
       // while native HLS still cannot decode this source. Choose the engine up front.
       const bundledPlayback = Engine.isSupported();
       // Native video cannot carry Basic headers or inspect redirects. Only the verified
-      // same-origin scoped cookie proxy confines all browser-managed child requests.
+      // A scoped cookie proxy confines all browser-managed child requests. Direct
+      // cross-origin use also requires explicit gateway support and browser cookies.
       const cookieProxy =
         context.client.profile.auth === "session" &&
-        context.client.profile.sameOrigin &&
+        (context.client.cookieMediaAllowed?.() ??
+          context.client.profile.sameOrigin) &&
         new URL(context.client.profile.baseUrl).pathname !== "/";
       const nativePlayback =
         !bundledPlayback &&

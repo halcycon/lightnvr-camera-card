@@ -136,6 +136,8 @@ export interface Detection {
 }
 export interface NvrClient {
   readonly profile: ServerProfile;
+  /** Same-origin cookie route, or an HTTPS gateway that explicitly advertises cookie support. */
+  cookieMediaAllowed?(): boolean;
   connect(
     credentials?: Credentials,
     options?: RequestOptions,

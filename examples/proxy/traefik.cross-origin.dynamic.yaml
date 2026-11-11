@@ -1,0 +1,17 @@
+# Merge into the NVR's existing Traefik file-provider configuration.
+# Its existing NVR-host TLS/certificate configuration must cover this router too.
+# No HA routes and no StripPrefix: helper handles scoped requests/responses.
+http:
+  routers:
+    lightnvr-card:
+      rule: "Host(`nvr.example.test`) && PathPrefix(`/ha-card/`)"
+      priority: 1000
+      entryPoints: [websecure]
+      service: lightnvr-card-router
+      tls: {}
+  services:
+    lightnvr-card-router:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://172.31.253.3:8080

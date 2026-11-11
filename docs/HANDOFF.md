@@ -4,7 +4,7 @@ The card uses the existing lightNVR-managed go2rtc. It implements URL/account di
 
 Read [verification](verification.md) before assigning device or installation support. Actual current/older HA playback and editor checks passed with generated media; authenticated store installation and physical two-way audio remain unverified. The public repository and development bundle are separate from a tagged release or default catalog listing.
 
-For deployment, follow [connectivity](connectivity.md) and [TLS/two-way audio](tls-and-two-way-audio.md). A TLS sidecar on the NVR alone does not secure the HA document or solve cross-origin WebSocket/cookie restrictions. Full playback uses a scoped path on the HA origin; configure trusted proxies precisely. Camera talk also needs backchannel permission and reachable ICE. Credentials stored in dashboard configuration are visible to readers of that configuration; session storage requires interactive reauthentication.
+For same-site HTTPS HA/NVR hostnames, prefer the [NVR-side gateway](nvr-side-gateway.md), leaving HA's DNS, HTTPS and tunnel independent. The [HA-origin prefix topology](connectivity.md) remains optional. A TLS sidecar alone does not configure cross-origin WebSocket/cookie support. Camera talk also needs a secure HA document, backchannel permission and reachable ICE; see [TLS/two-way audio](tls-and-two-way-audio.md). Credentials stored in dashboard configuration are visible to readers of that configuration; session storage requires interactive reauthentication.
 
 For maintenance:
 
