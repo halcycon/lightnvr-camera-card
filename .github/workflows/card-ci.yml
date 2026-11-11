@@ -89,6 +89,8 @@ jobs:
           nix flake check --no-build
           nix develop --command bash -eu <<'SH'
           node --version
+          test "$(tailor --version)" = "0.6.0"
+          tailor measure
           npx --yes --package npm@11.8.0 npm ci
           just lint
           just test

@@ -10,7 +10,7 @@ Use Node 22 (the regular CI baseline is 22.22.2) and npm 11.8.0. Install depende
 npx --yes --package npm@11.8.0 npm ci
 ```
 
-With Nix, enter `nix develop` for Just, Actionlint, Node and the native quality tools. The committed flake lock pins the inputs; the project's overlay selects Node 22 while Tailor keeps its generic JavaScript fragment. The Nix CI job evaluates the flake and runs the actual lint/test/build commands inside that shell.
+With Nix, enter `nix develop` for Just, Actionlint, Node and the native quality tools. The committed flake lock pins the inputs; the project's overlay selects Node 22 while Tailor keeps its generic JavaScript fragment. A checksum-pinned package override supplies Tailor 0.6.0 because the locked packaging input still defaults to 0.5.0. The Nix CI job evaluates the flake and asserts the Tailor version, runs its health check and executes the actual lint/test/build commands inside that shell.
 
 Without Nix, install the pinned Just and Actionlint binaries into the ignored project directory, then add that directory to this shell's PATH:
 

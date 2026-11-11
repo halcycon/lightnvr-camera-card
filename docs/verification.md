@@ -48,7 +48,7 @@ No public release tag or catalog submission is created by these checks. A defaul
 
 The final standalone module is `dist/lightnvr-camera-card.js` (1,401,363 bytes). Its SHA-256 is `d0e938a115c556352392d9b3e5f2b3ff8922b904799506c07f891fa04cd2672f`. The matching release-shape check requires the complete current LICENSE and THIRD_PARTY_NOTICES text inside the JS.
 
-The prior HA-tested artifact had SHA-256 `e3bd48505c762870181263c347b2d1d69affbc224cc22862b4b04b82556c6e67`. Rebuilding with the expanded license banner left all JavaScript after that banner byte-identical. The [security review](security-review.md) records the proxy hardening and the three specific bundled-library false positives; no CodeQL query or path was disabled.
+Before the Tailor formatting follow-up, the HA-tested artifact had SHA-256 `e3bd48505c762870181263c347b2d1d69affbc224cc22862b4b04b82556c6e67`. That earlier license-only rebuild produced `d25c7444415d981cea02f6b29a6da708ba385c3aa653b374bab82c73ecb2b14a` with byte-identical player code; the subsequent formatting verification is recorded below. The [security review](security-review.md) records the proxy hardening and the three specific bundled-library false positives; no CodeQL query or path was disabled.
 
 ## Tailor tooling follow-up — 2026-11-11
 
