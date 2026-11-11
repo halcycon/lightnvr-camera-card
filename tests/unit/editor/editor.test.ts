@@ -574,6 +574,20 @@ describe("connection/discovery lifecycle", () => {
 });
 
 describe("HA custom editor element", () => {
+  it("saves the overlay style from its select as an enum rather than a control boolean", async () => {
+    const element = createEditorElement();
+    element.setConfig(getStubConfig());
+    document.body.append(element);
+    await element.updateComplete;
+    const label = [...element.shadowRoot!.querySelectorAll("label")].find((l) =>
+      l.textContent?.includes("Control style"),
+    )!;
+    const select = label.querySelector("select")!;
+    select.value = "overlay";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    await element.updateComplete;
+    expect(element.model.config.controls.style).toBe("overlay");
+  });
   it("registers only the editor, masks passwords and emits full bubbling composed config", async () => {
     const element = createEditorElement();
     expect(element).toBeInstanceOf(LightNvrCardEditor);

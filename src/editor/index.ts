@@ -84,6 +84,7 @@ const settings: { title: string; fields: [string, string, string[]?][] }[] = [
   {
     title: "Layout and visibility",
     fields: [
+      ["controls.style", "Control style", ["standard", "overlay"]],
       ["layout.aspect_ratio", "Aspect ratio (number)"],
       ["layout.object_fit", "Video fit", ["contain", "cover"]],
       ["layout.fullscreen_main", "Use main in fullscreen"],
@@ -212,7 +213,7 @@ export class LightNvrCardEditor extends LitElement {
         ))
     )
       delete owner[key];
-    else if (path.startsWith("controls.")) {
+    else if (path.startsWith("controls.") && path !== "controls.style") {
       if (raw === "default") delete owner[key];
       else owner[key] = raw === "true";
     } else if (path === "transports")

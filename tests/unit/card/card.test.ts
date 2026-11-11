@@ -55,6 +55,59 @@ const pointer = (target: EventTarget, type: string, pointerId = 1) =>
   );
 
 describe("Home Assistant card lifecycle", () => {
+  it("offers an accessible overlay without restarting playback when settings expand", async () => {
+    const { card, playback } = await mount({ controls: { style: "overlay" } });
+    const root = card.shadowRoot!;
+    const video = root.querySelector("video");
+    const bar = root.querySelector(".viewport .overlay-toolbar")!;
+    expect(bar.querySelectorAll("button svg").length).toBe(6);
+    expect(
+      [...bar.querySelectorAll("button")].every(
+        (b) => !!b.getAttribute("aria-label"),
+      ),
+    ).toBe(true);
+    const advanced = root.querySelector<HTMLElement>(".advanced")!;
+    expect(advanced.hidden).toBe(true);
+    const settings = bar.querySelector<HTMLButtonElement>(
+      '[aria-label="Camera settings"]',
+    )!;
+    settings.click();
+    await card.updateComplete;
+    expect(advanced.hidden).toBe(false);
+    expect(settings.getAttribute("aria-expanded")).toBe("true");
+    settings.click();
+    await card.updateComplete;
+    expect(advanced.hidden).toBe(true);
+    expect(root.querySelector("video")).toBe(video);
+    expect(playback.start).toHaveBeenCalledOnce();
+  });
+  it("switches control appearance without replacing the video or restarting its session", async () => {
+    const { card, playback } = await mount();
+    const video = card.shadowRoot!.querySelector("video");
+    card.setConfig(config({ controls: { style: "overlay" } }));
+    await card.updateComplete;
+    expect(
+      card.shadowRoot!.querySelector(".viewport .overlay-toolbar"),
+    ).toBeTruthy();
+    expect(card.shadowRoot!.querySelector("video")).toBe(video);
+    expect(playback.start).toHaveBeenCalledOnce();
+  });
+  it("retains keyboard hold-to-talk release in the icon toolbar", async () => {
+    vi.stubGlobal("isSecureContext", true);
+    const { card, playback } = await mount({
+      controls: { style: "overlay" },
+      audio: { microphone: true },
+    });
+    const mic = card.shadowRoot!.querySelector<HTMLButtonElement>(
+      '[aria-label="Hold to talk"]',
+    )!;
+    key(mic, "keydown", " ");
+    await flush();
+    expect(playback.startTalk).toHaveBeenCalledOnce();
+    key(mic, "keyup", " ");
+    await flush();
+    expect(playback.stopTalk).toHaveBeenCalled();
+  });
   it("registers the custom card once and provides lazy editor helpers and Sections sizing", async () => {
     expect(customElements.get("lightnvr-camera-card")).toBe(LightNvrCameraCard);
     const cards = (

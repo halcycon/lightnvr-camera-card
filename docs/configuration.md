@@ -63,6 +63,19 @@ Control flags: `speaker`, `microphone`, `fullscreen`, `snapshot`, `transport`, `
 
 Hidden/offscreen cards always stop talk and PTZ interaction even when playback policy is `continue`. Talk also stops on release/cancel/blur, disconnect, fallback, reconfigure and removal; it never automatically resumes.
 
+## Control appearance
+
+Set `controls.style: overlay` for an icon toolbar along the bottom of the video. The default `standard` keeps the labeled controls below it. The visual editor exposes **Control style** under Layout and visibility.
+
+```yaml
+controls:
+  style: overlay
+```
+
+The overlay keeps retry, snapshot, speaker, microphone and fullscreen available; its settings button expands volume, source/profile, zoom, PTZ and camera management controls. Individual `controls` visibility flags still apply. Unknown permission hints stay available in settings/tooltips; live errors, login and microphone state remain visible. Hold-to-talk retains pointer capture, keyboard press/release and cancellation behavior. Changing appearance or opening settings does not restart the video. The toolbar remains visible and keeps 44-pixel touch targets, wrapping on very narrow cards.
+
+Toolbar colors/radius inherit the theme and can be customized with CSS variables `--lightnvr-toolbar-background`, `--lightnvr-toolbar-color`, and `--lightnvr-toolbar-radius`. No external icon library or card-mod dependency is needed for the built-in style.
+
 ## Native HA metadata is separate
 
 `visibility` is HA's **condition array**, not playback policy. The card preserves `grid_options`, `view_layout`, legacy `layout_options`, `index`, `view_index`, `disabled` and native `visibility`. HA evaluates the conditions. Metadata-only resize/placement updates are excluded from media identity so they do not restart authentication, playback or talk.

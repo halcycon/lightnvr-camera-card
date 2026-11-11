@@ -124,6 +124,7 @@ const rawCardConfigSchema = z
       .prefault({}),
     controls: z
       .object({
+        style: z.enum(["standard", "overlay"]).default("standard"),
         speaker: z.boolean().optional(),
         microphone: z.boolean().optional(),
         fullscreen: z.boolean().optional(),

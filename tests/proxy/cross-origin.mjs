@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import https from "node:https";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash, X509Certificate } from "node:crypto";
@@ -215,6 +215,7 @@ export async function crossOriginGateway() {
             password: f.password,
             credential_storage: "dashboard",
             transports: [transport],
+            controls: { style: transport === "mse" ? "overlay" : "standard" },
             audio: { listen: false, muted: true, microphone: false },
           });
           document.body.append(card);
@@ -261,6 +262,63 @@ export async function crossOriginGateway() {
             .querySelector("lightnvr-camera-card")
             .shadowRoot.querySelector("video").videoWidth,
       );
+      if (transport === "mse") {
+        await page
+          .getByRole("button", { name: "Camera settings", exact: true })
+          .click();
+        await page.waitForFunction(
+          () =>
+            !document
+              .querySelector("lightnvr-camera-card")
+              .shadowRoot.querySelector(".advanced").hidden,
+        );
+        await page
+          .getByRole("button", { name: "Camera settings", exact: true })
+          .click();
+        for (const width of [860, 320]) {
+          await page.setViewportSize({ width: width + 32, height: 800 });
+          await page.evaluate((width) => {
+            document.body.style.cssText =
+              "margin:16px;background:#131416;color:#eee;--primary-text-color:#eee;--secondary-text-color:#aaa;--ha-card-background:#202124;font-family:system-ui";
+            document.querySelector("lightnvr-camera-card").style.width =
+              `${width}px`;
+          }, width);
+          assert.equal(
+            await page.evaluate(() => {
+              const root = document.querySelector(
+                "lightnvr-camera-card",
+              ).shadowRoot;
+              const bar = root
+                .querySelector(".overlay-toolbar")
+                .getBoundingClientRect();
+              return [
+                ...root.querySelectorAll(".overlay-toolbar button"),
+              ].every((b) => {
+                const r = b.getBoundingClientRect();
+                return (
+                  r.width >= 44 &&
+                  r.height >= 44 &&
+                  r.left >= bar.left &&
+                  r.right <= bar.right
+                );
+              });
+            }),
+            true,
+            "overlay buttons must retain touch targets and fit their card",
+          );
+          if (process.env.LIGHTNVR_UI_PREVIEW_DIR) {
+            await mkdir(process.env.LIGHTNVR_UI_PREVIEW_DIR, {
+              recursive: true,
+            });
+            await page.locator("lightnvr-camera-card").screenshot({
+              path: join(
+                process.env.LIGHTNVR_UI_PREVIEW_DIR,
+                `overlay-${width}.png`,
+              ),
+            });
+          }
+        }
+      }
       await page.evaluate(() =>
         document.querySelector("lightnvr-camera-card").remove(),
       );
@@ -293,6 +351,77 @@ export async function crossOriginGateway() {
       { gateway: nvrOrigin + "/ha-card/", source: fixture.source },
     );
     assert.equal(sdp, 201);
+    const wsWebrtc = await page.evaluate(
+      async ({ gateway, source }) => {
+        const pc = new RTCPeerConnection({ iceServers: [] });
+        const ws = new WebSocket(
+          gateway.replace("https:", "wss:") +
+            "go2rtc/api/ws?src=" +
+            encodeURIComponent(source),
+        );
+        try {
+          return await new Promise((resolve) => {
+            const finish = (value) => {
+              clearTimeout(timer);
+              resolve(value);
+            };
+            const timer = setTimeout(() => finish(false), 10000);
+            pc.onicecandidate = (event) => {
+              if (ws.readyState === WebSocket.OPEN)
+                ws.send(
+                  JSON.stringify({
+                    type: "webrtc/candidate",
+                    value: event.candidate?.candidate ?? "",
+                  }),
+                );
+            };
+            ws.onerror = () => finish(false);
+            ws.onmessage = async (event) => {
+              try {
+                const message = JSON.parse(event.data);
+                if (message.type === "webrtc/answer") {
+                  await pc.setRemoteDescription({
+                    type: "answer",
+                    sdp: message.value,
+                  });
+                  finish(true);
+                } else if (message.type === "webrtc/candidate" && message.value)
+                  await pc.addIceCandidate({
+                    candidate: message.value,
+                    sdpMid: "0",
+                  });
+                else if (message.type === "error") finish(false);
+              } catch {
+                finish(false);
+              }
+            };
+            ws.onopen = async () => {
+              try {
+                pc.addTransceiver("video", { direction: "recvonly" });
+                await pc.setLocalDescription(await pc.createOffer());
+                ws.send(
+                  JSON.stringify({
+                    type: "webrtc/offer",
+                    value: pc.localDescription.sdp,
+                  }),
+                );
+              } catch {
+                finish(false);
+              }
+            };
+          });
+        } finally {
+          pc.close();
+          ws.close();
+        }
+      },
+      { gateway: nvrOrigin + "/ha-card/", source: fixture.source },
+    );
+    assert.equal(
+      wsWebrtc,
+      true,
+      "go2rtc WebSocket WebRTC signaling should return a valid answer",
+    );
     assert.equal(
       await page.evaluate(
         async (gateway) =>
@@ -427,6 +556,8 @@ export async function crossOriginGateway() {
         crossOriginGateway: "passed",
         frames,
         sdp201: true,
+        websocketWebRTCAnswer: true,
+        overlayControlsAndTouchTargets: true,
         authenticatedWSS: true,
         artifactSHA256: createHash("sha256").update(bundle).digest("hex"),
         readableAuthDenial: true,

@@ -1,6 +1,6 @@
 # Screenshot provenance
 
-These are actual Home Assistant **2026.11.1 Container** screenshots in **Chromium 156**, supplied and visually reviewed as safe by the coordinator on **2026-11-10**, then visually inspected before copying into the public documentation. They use an isolated fixture with generated media and camera names, with no production hosts, camera scenes, credentials, address bar, SDP or configuration secrets shown. They are not AI-generated UI mockups.
+The `ha-generated-*` files below are actual Home Assistant **2026.11.1 Container** screenshots in **Chromium 156**, supplied and visually reviewed as safe by the coordinator on **2026-11-10**, then visually inspected before copying into the public documentation. They use an isolated fixture with generated media and camera names, with no production hosts, camera scenes, credentials, address bar, SDP or configuration secrets shown. They are not AI-generated UI mockups.
 
 | Image | What it shows |
 | --- | --- |
@@ -11,3 +11,7 @@ These are actual Home Assistant **2026.11.1 Container** screenshots in **Chromiu
 The coordinator’s expanded 11-case actual-HA matrix separately established decoded MSE/HLS frames, fallback/denial behavior, independent card removal, Sections/reload/native visibility, metadata and volume preservation, real editor discovery/selection/grid YAML, and no microphone acquisition across navigation. A still image alone does not prove these behaviors. See the [evidence matrix](../../README.md#verified-scope).
 
 The disabled talk controls do not establish physical camera backchannel support. None of these images proves authenticated GitHub Marketplace/HACS installation or upgrade, legacy HA 2026.10.4 card acceptance, Safari/Companion support or physical talk.
+
+## Overlay browser fixture — 2026-11-11
+
+[overlay-generated-860.png](overlay-generated-860.png) and [overlay-generated-320.png](overlay-generated-320.png) show the real updated card decoding generated MSE video from an isolated official lightNVR server, inside the owned cross-origin browser fixture in Chromium 156. They are **not actual HA screenshots**. Only a dark theme and card width are applied by the fixture page; the controls come from the production card. Speaker/microphone are disabled by the test configuration. Both widths were inspected, and the test checks 44-pixel touch targets and settings expansion. No production camera scene or user screenshot was copied into these files. The matching artifact is recorded in [verification](../verification.md).

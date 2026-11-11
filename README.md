@@ -56,6 +56,8 @@ The editor offers transport order, audio/PTT, controls, layout and playback visi
 
 Speaker playback starts muted; browser autoplay policy may require **Listen** or **Play / retry locally**. Microphone capture requires a deliberate gesture, and never resumes automatically after fallback or reconnect. MSE/HLS fallback can add latency and removes talk. Local digital zoom/pan is supported; camera-specific fisheye/dewarping remains in the NVR web UI. Motorized controls depend on capability and permission. Recording, privacy and refresh can affect other viewers and require confirmation. Timeline links require an explicit `viewer_url` for the real NVR web UI, not the API-only proxy.
 
+For a compact icon toolbar over the bottom of the video, add `controls: { style: overlay }`. The settings button expands the larger control panel; changing appearance does not restart playback. Labeled controls remain the default. See [control appearance](docs/configuration.md#control-appearance), the generated-media browser previews at [860 px](docs/images/overlay-generated-860.png) and [320 px](docs/images/overlay-generated-320.png), and their [provenance](docs/images/README.md). For comparisons with other clients, see [Advanced Camera Card interoperability](docs/advanced-camera-card.md), including authentication and two-way-audio limits.
+
 ## Verified scope
 
 | Component | Evidence and limits |

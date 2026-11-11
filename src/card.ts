@@ -14,6 +14,7 @@ import {
   type ViewerRuntime,
 } from "./ui/session";
 import { viewerStyles } from "./ui/styles";
+import { toolbarIcon, type ToolbarIcon } from "./ui/icons";
 
 function withHaMetadata(
   effective: CardConfigV1,
@@ -55,6 +56,7 @@ export class LightNvrCameraCard extends LitElement {
   private fullscreenRestore: CardConfigV1 | undefined;
   private upgradeFailed = false;
   private notice = "";
+  private advancedOpen = false;
   private downloadTimer: ReturnType<typeof setTimeout> | undefined;
   private downloadUrl = "";
   private inputOwner:
@@ -91,14 +93,32 @@ export class LightNvrCameraCard extends LitElement {
       return;
     const sameMedia =
       this.configured &&
-      JSON.stringify(stripHaMetadata(config)) ===
-        JSON.stringify(stripHaMetadata(this.configured));
+      JSON.stringify({
+        ...stripHaMetadata(config),
+        controls: { ...config.controls, style: "standard" },
+      }) ===
+        JSON.stringify({
+          ...stripHaMetadata(this.configured),
+          controls: { ...this.configured.controls, style: "standard" },
+        });
     this.configured = config;
     if (sameMedia && this.config) {
+      if (this.config.controls.style !== config.controls.style)
+        this.cancelInteractions();
+      this.config.controls.style = config.controls.style;
       // Preserve local profile/volume and active gestures; only replace HA-owned metadata.
       this.config = withHaMetadata(this.config, config);
       if (this.fullscreenRestore)
-        this.fullscreenRestore = withHaMetadata(this.fullscreenRestore, config);
+        this.fullscreenRestore = withHaMetadata(
+          {
+            ...this.fullscreenRestore,
+            controls: {
+              ...this.fullscreenRestore.controls,
+              style: config.controls.style,
+            },
+          },
+          config,
+        );
       this.requestUpdate();
       return;
     }
@@ -367,7 +387,9 @@ export class LightNvrCameraCard extends LitElement {
     };
     this.restart();
   }
-  private show(name: keyof CardConfigV1["controls"]): boolean {
+  private show(
+    name: Exclude<keyof CardConfigV1["controls"], "style">,
+  ): boolean {
     return this.config?.controls[name] ?? name !== "refresh_source";
   }
   private access(action: Action) {
@@ -383,11 +405,16 @@ export class LightNvrCameraCard extends LitElement {
       this.session?.denied,
     );
   }
-  private button(label: string, action: Action, run: () => void) {
+  private button(
+    label: string,
+    action: Action,
+    run: () => void,
+    icon?: ToolbarIcon,
+  ) {
     const access = this.access(action);
-    return html`<button ?disabled=${!access.enabled || this.session?.busy} title=${access.reason} @blur=${() => {
+    return html`<button ?disabled=${!access.enabled || this.session?.busy} aria-label=${label} title=${icon ? `${label} · ${access.reason}` : access.reason} @blur=${() => {
       if (action === "ptz") this.cancelInteractions();
-    }} @click=${run}>${label}</button><span class="hint">${access.reason}</span>`;
+    }} @click=${run}>${icon ? toolbarIcon(icon) : label}</button>${icon ? nothing : html`<span class="hint">${access.reason}</span>`}`;
   }
   private hold(
     label: string,
@@ -395,8 +422,9 @@ export class LightNvrCameraCard extends LitElement {
     disabled: boolean,
     reason: string,
     axes?: PtzAxes,
+    icon?: ToolbarIcon,
   ) {
-    return html`<button class="hold" ?disabled=${disabled} title=${reason} aria-label=${label} aria-describedby=${kind === "talk" ? `${this.scope}-mic-hint` : nothing}
+    return html`<button class="hold" ?disabled=${disabled} title=${icon ? `${label} · ${reason}` : reason} aria-label=${label} aria-describedby=${kind === "talk" ? `${this.scope}-mic-hint` : nothing}
       aria-pressed=${kind === "talk" ? String(this.session?.snapshot.talk.active ?? false) : nothing}
       @pointerdown=${(event: PointerEvent) => this.pointerStart(event, kind, axes)}
       @pointerup=${this.releasePointer} @pointercancel=${this.cancelInteractions} @lostpointercapture=${this.lostCapture}
@@ -411,7 +439,7 @@ export class LightNvrCameraCard extends LitElement {
             this.requestUpdate();
           }
         }
-      }}>${label}</button>`;
+      }}>${icon ? toolbarIcon(icon) : label}</button>`;
   }
   protected updated(): void {
     const video = this.renderRoot.querySelector("video");
@@ -466,30 +494,45 @@ export class LightNvrCameraCard extends LitElement {
     const video = this.renderRoot?.querySelector("video");
     const width = video?.videoWidth || 16,
       height = video?.videoHeight || 9;
-    return html`<ha-card>
+    const overlay = config.controls.style === "overlay";
+    const toolbar = html`<div class=${overlay ? "toolbar overlay-toolbar" : "row toolbar"} role="group" aria-label="Camera controls">
+      ${overlay ? html`<span class=${snapshot?.talk.active ? "toolbar-state talking" : snapshot?.talk.pending ? "toolbar-state pending" : "toolbar-state"} role="status">${snapshot?.talk.active ? "MIC LIVE" : snapshot?.talk.pending ? "MIC…" : (this.show("transport") ? (snapshot?.transport ?? snapshot?.state ?? "Connecting") : (snapshot?.state ?? "Connecting")).toUpperCase()}</span>` : nothing}
+      <button aria-label="Play / retry locally" title="Play / retry locally" @click=${() => {
+        this.cancelInteractions();
+        void session?.playback.retry();
+      }}>${overlay ? toolbarIcon("retry") : "Play / retry locally"}</button>
+      ${overlay && this.show("snapshot") ? this.button("Snapshot", "snapshot", () => void this.snapshot(), "snapshot") : nothing}
+      ${this.show("speaker") ? html`<button aria-label=${session?.listening ? "Mute speaker" : "Listen"} aria-pressed=${String(session?.listening ?? false)} ?disabled=${!speaker.enabled || session?.denied.has("audio.listen")} title=${`${session?.listening ? "Mute speaker" : "Listen"} · ${speaker.reason}`} @click=${() => void session?.speaker()}>${overlay ? toolbarIcon(session?.listening ? "speaker" : "muted") : session?.listening ? "Mute speaker" : "Listen"}</button>` : nothing}
+      ${this.show("microphone") ? this.hold(config.audio.talk_mode === "ptt" ? "Hold to talk" : "Toggle microphone", "talk", !mic.enabled || (session?.denied.has("audio.talk") ?? false), mic.reason, undefined, overlay ? "microphone" : undefined) : nothing}
+      ${this.show("fullscreen") ? html`<button aria-label="Fullscreen" title="Fullscreen" @click=${() => void this.fullscreen()}>${overlay ? toolbarIcon("fullscreen") : "Fullscreen"}</button>` : nothing}
+      ${!overlay && this.show("snapshot") ? this.button("Snapshot", "snapshot", () => void this.snapshot()) : nothing}
+      ${
+        overlay
+          ? html`<button aria-label="Camera settings" title="Camera settings" aria-expanded=${String(this.advancedOpen)} aria-controls=${`${this.scope}-advanced`} @click=${() => {
+              this.cancelInteractions();
+              this.advancedOpen = !this.advancedOpen;
+              this.requestUpdate();
+            }}>${toolbarIcon("settings")}</button>`
+          : nothing
+      }
+    </div>`;
+    return html`<ha-card class=${overlay ? "appearance-overlay" : "appearance-standard"}>
       <header>${config.title ?? config.stream}</header>
       <div class="viewport" style=${`aspect-ratio:${config.layout.aspect_ratio}`}>
         <div class="image" style=${`transform:translate(${this.panX}%,${this.panY}%) scale(${this.zoom})`}>
           <video autoplay playsinline muted style=${`object-fit:${config.layout.object_fit};visibility:${session?.privateCamera ? "hidden" : "visible"}`} @loadedmetadata=${() => this.requestUpdate()}></video>
           ${session?.detectionEnabled && !session.privateCamera ? html`<svg width="100%" height="100%" viewBox=${`0 0 ${width} ${height}`} preserveAspectRatio=${config.layout.object_fit === "cover" ? "xMidYMid slice" : "xMidYMid meet"} aria-label="Detection overlay">${session.detections.map((d) => html`<g><rect x=${d.x * width} y=${d.y * height} width=${d.width * width} height=${d.height * height}></rect><text x=${d.x * width} y=${Math.max(14, d.y * height)}>${d.label}</text></g>`)}</svg>` : nothing}
         </div>
+        ${overlay ? toolbar : nothing}
       </div>
       <div class="body">
-        <div class="status" role="status">${snapshot?.state ?? "Connecting"}${this.show("transport") && snapshot?.transport ? ` · ${snapshot.transport.toUpperCase()}` : ""}${snapshot?.failure ? ` · ${snapshot.failure.message}` : ""}</div>
+        <div class=${overlay && snapshot?.state === "playing" && !snapshot.failure ? "status sr-only" : "status"} role="status">${snapshot?.state ?? "Connecting"}${this.show("transport") && snapshot?.transport ? ` · ${snapshot.transport.toUpperCase()}` : ""}${snapshot?.failure ? ` · ${snapshot.failure.message}` : ""}</div>
         ${this.show("transport") && snapshot?.state === "playing" && session?.fallbackReason ? html`<div class="hint">Previous playback issue: ${session.fallbackReason}</div>` : nothing}
         ${session?.message || this.notice ? html`<p class="message" role="status">${session?.message} ${this.notice}</p>` : nothing}
         ${snapshot?.talk.failure ? html`<p role="alert">Microphone: ${snapshot.talk.failure.message}</p>` : nothing}
         ${session?.auth ? this.authForm(session) : nothing}
-        <div class="row">
-          <button @click=${() => {
-            this.cancelInteractions();
-            void session?.playback.retry();
-          }}>Play / retry locally</button>
-          ${this.show("speaker") ? html`<button aria-pressed=${String(session?.listening ?? false)} ?disabled=${!speaker.enabled || session?.denied.has("audio.listen")} title=${speaker.reason} @click=${() => void session?.speaker()}>${session?.listening ? "Mute speaker" : "Listen"}</button>` : nothing}
-          ${this.show("microphone") ? this.hold(config.audio.talk_mode === "ptt" ? "Hold to talk" : "Toggle microphone", "talk", !mic.enabled || (session?.denied.has("audio.talk") ?? false), mic.reason) : nothing}
-          ${this.show("fullscreen") ? html`<button @click=${() => void this.fullscreen()}>Fullscreen</button>` : nothing}
-          ${this.show("snapshot") ? this.button("Snapshot", "snapshot", () => void this.snapshot()) : nothing}
-        </div>
+        ${overlay ? nothing : toolbar}
+        <div class="advanced" id=${`${this.scope}-advanced`} ?hidden=${overlay && !this.advancedOpen}>
         ${this.show("microphone") ? html`<div class="hint" id=${`${this.scope}-mic-hint`}>${mic.reason}</div><div role="status" class=${snapshot?.talk.active ? "mic" : "hint"}>${snapshot?.talk.active ? "Microphone active" : snapshot?.talk.pending ? "Waiting for microphone permission…" : "Microphone off"} ${snapshot?.talk.level !== undefined ? html`<meter min="0" max="1" .value=${snapshot.talk.level} aria-label="Local microphone level"></meter>` : nothing}</div>` : nothing}
         ${
           this.show("speaker")
@@ -638,6 +681,7 @@ export class LightNvrCameraCard extends LitElement {
               : html`<p class="hint">Set viewer_url to the confirmed lightNVR web UI URL to open its timeline.</p>`
             : nothing
         }
+        </div>
       </div>
     </ha-card>`;
   }
